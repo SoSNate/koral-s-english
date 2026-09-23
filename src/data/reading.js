@@ -1,20 +1,20 @@
 // ── טקסטים לקריאה + שאלות הבנה (יומיום, משפחה, חברה) ──────────────
 export const readingData = [
   {
-    title: "The Group Project",
-    text: `Dana was usually [[confident|בטוחה בעצמה|קוֹנְפִידֶנְט]], but this time she felt [[anxious|חרדה|אֶנְקְשֶׁס]]. Her teacher had put her in a group with Roy, a boy who was known for being [[lazy|עצלן|לֵייזִי]] and never finishing his [[assignments|מטלות|אֲסַיינְמֶנְטְס]] on time.
+    title: "The New Neighbor",
+    text: `A new family moved in next door, and Ron was very [[curious|סקרן|קְיוּרִיאָס]] about them. Before he even met them, a classmate started a [[rumor|שמועה|רוּמֶר]] that the new [[neighbor|שכן|נֵייבֶּר]] boy was [[selfish|אנוכי|סֶלְפִיש]] and refused to talk to anyone.
 
-    [[Although|למרות ש|אוֹלְדוֹאוּ]] Dana wanted to complain to the teacher, she decided to [[avoid|להימנע מ|אֶבּוֹיד]] an argument and try a different approach. She [[suggested|הציעה|סַגְ'סְט]] that they split the project into small parts, so each person would be [[responsible|אחראי|רִיסְפּוֹנְסִיבֶּל]] for one section.
+    The [[gossip|רכילות|גוֹסִיפּ]] spread quickly, and soon most of the kids on the street decided not to [[include|לכלול|אִינְקְלוּד]] him in their games. Ron thought it was [[unfair|לא הוגן|אָנְפֵייר]] to [[judge|לשפוט|גַ'אדְג']] someone before actually meeting him.
 
-    [[Since|מאחר ש|סִינְס]] Roy finally had a clear task, he surprised everyone. He worked hard and even helped design the poster. [[Consequently|כתוצאה מכך|קוֹנְסִיקְוֶונְטְלִי]], the group finished the project two days early.
+    [[However|אולם|הַאוּוֶר]], Ron decided to knock on the door anyway. He was [[generous|נדיב|גֶ'נֶרֶס]] with his time and invited the boy, whose name was Adam, to play basketball. Adam looked surprised — no one else had even said hello.
 
-    Dana [[realized|הבינה|רִיאָלַייז]] that judging someone before giving them a chance wasn't [[fair|הוגן|פֵייר]]. [[Instead|במקום זאת|אינסטד]] of complaining, she had found a solution — and gained a new friend along the way.`,
+    [[Eventually|בסופו של דבר|אִיוֶונְצְ'ואָלִי]], Ron [[realized|הבין|רִיאָלַייז]] that Adam was actually shy, not selfish at all. The rumor had been completely wrong, and Ron was glad he trusted his own judgment instead of the gossip.`,
     questions: [
-      { q: "How did Dana feel at first about working with Roy?", options: ["Confident and calm", "Anxious", "Bored", "Grateful"], correct: 1 },
-      { q: "What did Dana suggest to solve the problem?", options: ["Complaining to the teacher", "Splitting the project into parts", "Doing the whole project herself", "Ignoring Roy completely"], correct: 1 },
-      { q: "What happened after Roy got his own task?", options: ["He gave up", "He worked hard and helped", "He complained to the teacher", "He asked to change groups"], correct: 1 },
-      { q: "What did each group member become, according to Dana's plan?", type: "text", correctAnswers: ["responsible", "responsible for one section", "responsible for a part"] },
-      { q: "What did Dana gain by the end of the story, besides a finished project?", type: "text", correctAnswers: ["a new friend", "a friend", "new friend"] }
+      { q: "What did a classmate say about the new neighbor before Ron met him?", options: ["That he was very friendly", "That he was selfish", "That he loved basketball", "That he was moving away soon"], correct: 1 },
+      { q: "What did most of the kids on the street decide to do?", options: ["Invite him to play", "Not include him in their games", "Ask him to move away", "Visit his house"], correct: 1 },
+      { q: "What did Ron do instead of believing the rumor?", options: ["He ignored Adam completely", "He knocked on the door and invited Adam to play", "He told the teacher", "He spread the rumor further"], correct: 1 },
+      { q: "What did Ron think about judging Adam before meeting him?", type: "text", correctAnswers: ["unfair", "it was unfair", "it wasn't fair"] },
+      { q: "What did Ron realize Adam really was, instead of selfish?", type: "text", correctAnswers: ["shy", "he was shy"] }
     ]
   },
   {
