@@ -3,6 +3,7 @@ import { wordsData } from './data/words.js';
 import { builderData, analogiesData, completionData, halfSentencesData } from './data/exercises.js';
 import { storiesData } from './data/stories.js';
 import { readingData } from './data/reading.js';
+import { conversationsData } from './data/conversations.js';
 
 // ── Helpers ───────────────────────────────────────────────────────
 const shuffle = arr => [...arr].sort(() => Math.random() - 0.5);
@@ -28,16 +29,41 @@ const playSound = type => {
     } catch (_) {}
 };
 
-const speakText = (text, rate = 0.85) => {
+// דפדפנים כמו Chrome טוענים את רשימת הקולים באופן אסינכרוני - בלי לחכות לה
+// אנחנו תמיד נופלים לקול ברירת המחדל הרובוטי של המערכת. המטמון פה פותר את זה.
+let cachedVoices = [];
+const loadVoices = () => new Promise(resolve => {
+    const existing = window.speechSynthesis.getVoices();
+    if (existing.length) { cachedVoices = existing; resolve(existing); return; }
+    window.speechSynthesis.onvoiceschanged = () => {
+        cachedVoices = window.speechSynthesis.getVoices();
+        resolve(cachedVoices);
+    };
+});
+loadVoices();
+
+const pickBestVoice = voices => {
+    // סדר עדיפויות: קולות "טבעיים" מבוססי-ענן (זמינים בעיקר ב-Edge/Chrome מחוברים לרשת),
+    // ואז שמות קולות נשיים איכותיים ידועים (גם המקומיים ל-Windows), ואז כל קול נשי אנגלי
+    const priorityNames = [
+        "Natural", "Online", "Premium", "Enhanced",
+        "Google US English", "Google UK English Female",
+        "Microsoft Ava", "Microsoft Emma", "Microsoft Jenny",
+        "Samantha", "Microsoft Zira", "Microsoft Hazel", "Microsoft Susan"
+    ];
+    for (const name of priorityNames) {
+        const match = voices.find(v => v.lang.startsWith('en') && v.name.includes(name) && !v.name.toLowerCase().includes('male'));
+        if (match) return match;
+    }
+    return voices.find(v => v.lang.startsWith('en') && !v.name.toLowerCase().includes('male')) || voices.find(v => v.lang.startsWith('en'));
+};
+
+const speakText = async (text, rate = 0.85) => {
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
     u.lang = 'en-US'; u.rate = rate; u.pitch = 1.0;
-    const voices = window.speechSynthesis.getVoices();
-    const pick = voices.find(v =>
-        v.lang.startsWith('en') &&
-        (v.name.includes("Premium") || v.name.includes("Enhanced") || v.name.includes("Online") || v.name.includes("Natural")) &&
-        !v.name.toLowerCase().includes("male")
-    ) || voices.find(v => ["Google US English", "Microsoft Samantha", "Samantha", "Microsoft Zira"].some(p => v.name.includes(p)));
+    const voices = cachedVoices.length ? cachedVoices : await loadVoices();
+    const pick = pickBestVoice(voices);
     if (pick) u.voice = pick;
     window.speechSynthesis.speak(u);
 };
@@ -121,6 +147,9 @@ export default function App() {
     const [readingIndex, setReadingIndex] = useState(0);
     const [readingAnswers, setReadingAnswers] = useState({});
     const [readingTextInputs, setReadingTextInputs] = useState({});
+    const [convIndex, setConvIndex] = useState(0);
+    const [convStep, setConvStep] = useState(0);
+    const [convWrongFlash, setConvWrongFlash] = useState(false);
 
     const isProcessingRef = useRef(false);
 
@@ -349,10 +378,33 @@ export default function App() {
         setReadingIndex(idx); setReadingAnswers({}); setReadingTextInputs({}); setView('reading-detail');
     };
 
+    const openConversation = idx => {
+        setConvIndex(idx); setConvStep(0); setConvWrongFlash(false); setView('conversation-detail');
+    };
+
+    const handleConvAnswer = opt => {
+        if (opt.correct) {
+            playSound('success');
+            setConvStep(prev => prev + 1);
+        } else {
+            playSound('error');
+            setConvWrongFlash(true);
+            setTimeout(() => setConvWrongFlash(false), 500);
+        }
+    };
+
+    useEffect(() => {
+        if (view !== 'conversation-detail') return;
+        const turns = conversationsData[convIndex].turns;
+        const turn = turns[convStep];
+        if (turn && turn.speaker === 'other') speakText(turn.en);
+        if (!turn) triggerAnimation('confetti');
+    }, [view, convIndex, convStep]);
+
     const NavBtn = ({ icon, label, id, action }) => (
         <button onClick={() => { if (action) action(); else setView(id); }}
             className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm border border-transparent
-                ${view === id || (view.startsWith('quiz') && id === 'quiz') || (view.startsWith('reading') && id === 'reading') ? 'bg-teal-500 text-white shadow-md scale-105 border-teal-600' : 'bg-white text-slate-700 hover:bg-teal-50 hover:text-teal-600 hover:border-teal-200'}`}>
+                ${view === id || (view.startsWith('quiz') && id === 'quiz') || (view.startsWith('reading') && id === 'reading') || (view.startsWith('conversation') && id === 'conversation') ? 'bg-teal-500 text-white shadow-md scale-105 border-teal-600' : 'bg-white text-slate-700 hover:bg-teal-50 hover:text-teal-600 hover:border-teal-200'}`}>
             <span className="text-sm sm:text-base">{icon}</span><span className="hidden sm:inline">{label}</span>
         </button>
     );
@@ -398,6 +450,7 @@ export default function App() {
                         <NavBtn icon="🧵" label="חצאי משפט" id="halves" action={startHalfSentences} />
                         <NavBtn icon="📚" label="סיפור" id="story" action={() => { setView('story'); setStoryIndex(Math.floor(Math.random() * storiesData.length)); }} />
                         <NavBtn icon="📰" label="קריאה" id="reading" />
+                        <NavBtn icon="💬" label="שיחה" id="conversation" action={() => setView('conversation')} />
                         <NavBtn icon="🃏" label="זוגות" id="match" action={startMatchGame} />
                         <NavBtn icon="🏆" label="בוחן" id="quiz" action={startQuiz} />
                     </div>
@@ -695,6 +748,81 @@ export default function App() {
                         </div>
                     </div>
                 )}
+
+                {/* Conversation List */}
+                {view === 'conversation' && (
+                    <div className="bg-white rounded-[3rem] p-8 shadow-xl border-t-8 border-teal-400 transition-all">
+                        <h2 className="text-3xl font-black text-teal-700 mb-2 text-center">תרגול ניהול שיחה 💬</h2>
+                        <p className="text-slate-500 font-bold mb-6 text-center">בחרי שיחה, האזיני למה שאומרים לך ובחרי את התגובה הכי מתאימה</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {conversationsData.map((c, idx) => (
+                                <button key={idx} onClick={() => openConversation(idx)}
+                                    className="p-6 bg-teal-50 border-2 border-teal-200 rounded-2xl font-bold text-xl text-teal-900 hover:bg-teal-500 hover:text-white transition-all shadow-sm text-center">
+                                    {c.title}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Conversation Detail */}
+                {view === 'conversation-detail' && (() => {
+                    const turns = conversationsData[convIndex].turns;
+                    const turn = turns[convStep];
+                    const history = turns.slice(0, convStep);
+                    return (
+                        <div className="bg-white rounded-[3rem] p-8 md:p-12 shadow-xl border-t-8 border-teal-400 transition-all">
+                            <button onClick={() => setView('conversation')} className="text-teal-600 font-bold mb-4">→ חזרה לרשימה</button>
+                            <h2 className="text-3xl font-black text-teal-700 mb-6 text-center">{conversationsData[convIndex].title}</h2>
+
+                            <div className="space-y-4 mb-8 max-h-[45vh] overflow-y-auto pr-1">
+                                {history.map((t, i) => (
+                                    <div key={i} className={`flex ${t.speaker === 'other' ? 'justify-start' : 'justify-end'}`}>
+                                        <div className={`max-w-[80%] p-4 rounded-2xl font-bold shadow-sm ${t.speaker === 'other' ? 'bg-cyan-50 border-2 border-cyan-200 text-cyan-900' : 'bg-teal-500 text-white'}`}>
+                                            <p dir="ltr">{t.speaker === 'other' ? t.en : t.options.find(o => o.correct).en}</p>
+                                            <p className="text-xs opacity-70 mt-1" dir="rtl">{t.he}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {!turn ? (
+                                <div className="text-center py-10">
+                                    <h3 className="text-4xl font-black text-emerald-500 mb-6">כל הכבוד! סיימת את השיחה! 🎉</h3>
+                                    <div className="flex justify-center gap-4 flex-wrap">
+                                        <button onClick={() => openConversation(convIndex)} className="px-8 py-4 bg-white border-2 border-teal-400 text-teal-600 rounded-xl font-bold hover:bg-teal-50">שחקי שוב</button>
+                                        <button onClick={() => openConversation(getNextRandom(convIndex, conversationsData.length))} className="px-8 py-4 bg-teal-500 text-white rounded-xl font-bold hover:bg-teal-600">שיחה הבאה</button>
+                                    </div>
+                                </div>
+                            ) : turn.speaker === 'other' ? (
+                                <div>
+                                    <div className="flex justify-start mb-6">
+                                        <div className="max-w-[80%] p-4 rounded-2xl font-bold shadow-sm bg-cyan-50 border-2 border-cyan-200 text-cyan-900">
+                                            <p dir="ltr">{turn.en}</p>
+                                            <p className="text-xs opacity-70 mt-1" dir="rtl">{turn.he}</p>
+                                        </div>
+                                    </div>
+                                    <button onClick={() => setConvStep(prev => prev + 1)}
+                                        className="block mx-auto px-10 py-4 bg-teal-500 text-white font-black text-lg rounded-2xl shadow-xl hover:bg-teal-600 transition-all">
+                                        המשך בשיחה →
+                                    </button>
+                                </div>
+                            ) : (
+                                <div>
+                                    <p className="text-center text-slate-500 font-bold mb-4">מה תעני? ({turn.he})</p>
+                                    <div className={`grid grid-cols-1 gap-3 ${convWrongFlash ? 'animate-pulse' : ''}`}>
+                                        {turn.options.map((opt, i) => (
+                                            <button key={i} onClick={() => handleConvAnswer(opt)}
+                                                className="p-4 bg-teal-50 border-2 border-teal-200 rounded-2xl font-bold text-lg text-teal-900 hover:bg-teal-500 hover:text-white transition-all shadow-sm text-right" dir="ltr">
+                                                {opt.en}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    );
+                })()}
 
                 {/* Match */}
                 {view === 'match' && (
