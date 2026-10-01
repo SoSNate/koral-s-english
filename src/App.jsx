@@ -123,6 +123,10 @@ export default function App() {
         try { return JSON.parse(localStorage.getItem('koral_mastered_words') || '[]'); }
         catch { return []; }
     });
+    const [matchMastered, setMatchMastered] = useState(() => {
+        try { return JSON.parse(localStorage.getItem('koral_match_mastered') || '[]'); }
+        catch { return []; }
+    });
     const [activeWordIndex, setActiveWordIndex] = useState(0);
     const [step, setStep] = useState(1);
     const [isListening, setIsListening] = useState(false);
@@ -179,12 +183,24 @@ export default function App() {
         localStorage.setItem('koral_mastered_words', JSON.stringify(masteredIndexes));
     }, [masteredIndexes]);
 
+    useEffect(() => {
+        localStorage.setItem('koral_match_mastered', JSON.stringify(matchMastered));
+    }, [matchMastered]);
+
     const triggerAnimation = type => {
         setActiveAnim(type);
         setTimeout(() => setActiveAnim(null), 1800);
     };
 
     const wordKey = w => `${w.en}`;
+
+    // כשקורל מצליחה במשחק אחר (זוגות, בוחן, השלמת משפטים) - גם המילה מסומנת כהצלחה בספרייה
+    const markWordLearned = text => {
+        if (!text) return;
+        const clean = String(text).toLowerCase().trim();
+        const match = wordsData.find(w => w.en.toLowerCase() === clean || w.en.toLowerCase().split(' - ')[0] === clean);
+        if (match) setMasteredIndexes(prev => prev.includes(wordKey(match)) ? prev : [...prev, wordKey(match)]);
+    };
 
     const handleSpeech = () => {
         if (isListening) return;
@@ -234,8 +250,9 @@ export default function App() {
 
     const resetProgress = () => {
         if (confirm("לאפס את כל ההתקדמות?")) {
-            setMasteredIndexes([]); setActiveWordIndex(0);
+            setMasteredIndexes([]); setActiveWordIndex(0); setMatchMastered([]);
             localStorage.removeItem('koral_mastered_words');
+            localStorage.removeItem('koral_match_mastered');
             setView('learn'); setStep(1);
         }
     };
@@ -244,8 +261,8 @@ export default function App() {
         const selected = shuffle(pool.length >= 6 ? pool : wordsData).slice(0, 6);
         let cards = [];
         selected.forEach((w, i) => {
-            cards.push({ id: `en-${i}`, text: w.en, type: 'en', pairId: i });
-            cards.push({ id: `he-${i}`, text: w.he, type: 'he', pairId: i });
+            cards.push({ id: `en-${i}`, text: w.en, type: 'en', pairId: i, key: wordKey(w) });
+            cards.push({ id: `he-${i}`, text: w.he, type: 'he', pairId: i, key: wordKey(w) });
         });
         setMatchCards(shuffle(cards));
         setFlippedCards([]); setMatchedPairs([]);
@@ -259,6 +276,8 @@ export default function App() {
         if (newFlipped.length === 2) {
             if (newFlipped[0].pairId === newFlipped[1].pairId) {
                 playSound('success');
+                setMatchMastered(prev => prev.includes(card.key) ? prev : [...prev, card.key]);
+                markWordLearned(card.key);
                 setTimeout(() => {
                     const newMatched = [...matchedPairs, newFlipped[0].pairId];
                     setMatchedPairs(newMatched);
@@ -303,18 +322,25 @@ export default function App() {
     };
 
     const startQuiz = () => {
-        const vocabQ = shuffle(wordsData).slice(0, 4).map(w => {
+        const vocabQ = shuffle(wordsData).slice(0, 2).map(w => {
             const others = wordsData.filter(x => x.he !== w.he).sort(() => 0.5 - Math.random()).slice(0, 3);
             const opts = shuffle([...others.map(x => x.he), w.he]);
             return { type: 'vocab', question: w.en, correct: w.he, options: opts };
         });
-        const analogyQ = shuffle(analogiesData).slice(0, 3).map(a => ({
+        const analogyQ = shuffle(analogiesData).slice(0, 2).map(a => ({
             type: 'analogy', data: a, correct: a.correct, options: shuffle(a.options)
         }));
-        const compQ = shuffle(completionData).slice(0, 3).map(c => ({
+        const compQ = shuffle(completionData).slice(0, 2).map(c => ({
             type: 'completion', data: c, correct: c.correct, options: shuffle(c.options)
         }));
-        setQuizSet(shuffle([...vocabQ, ...analogyQ, ...compQ]));
+        const builderQ = shuffle(builderData).slice(0, 2).map(b => ({
+            type: 'builder', data: b, correct: b.options[b.correct], options: shuffle(b.options)
+        }));
+        const halfQ = shuffle(halfSentencesData).slice(0, 2).map(h => {
+            const others = halfSentencesData.filter(x => x.id !== h.id).sort(() => 0.5 - Math.random()).slice(0, 3).map(x => x.end);
+            return { type: 'half', data: h, correct: h.end, options: shuffle([...others, h.end]) };
+        });
+        setQuizSet(shuffle([...vocabQ, ...analogyQ, ...compQ, ...builderQ, ...halfQ]));
         setQuizIndex(0); setQuizScore(0);
         setView('quiz'); setFeedback(null);
     };
@@ -326,6 +352,9 @@ export default function App() {
             setQuizScore(prev => prev + 1);
             playSound('success');
             triggerAnimation('success-check');
+            const q = quizSet[quizIndex];
+            if (q.type === 'vocab') markWordLearned(q.question);
+            else if (q.type === 'completion' || q.type === 'builder') markWordLearned(q.correct);
         } else playSound('error');
         setTimeout(() => {
             if (quizIndex < quizSet.length - 1) setQuizIndex(prev => prev + 1);
@@ -522,12 +551,14 @@ export default function App() {
                     <div>
                         <GradeFilterBtns />
                         <div className="bg-white rounded-[3rem] p-8 shadow-xl border-t-8 border-cyan-300 transition-all">
-                            <h2 className="text-3xl font-black text-teal-600 mb-6 text-center">הספריה הגדולה ({pool.length} מילים) 📚</h2>
+                            <h2 className="text-3xl font-black text-teal-600 mb-2 text-center">הספריה הגדולה ({pool.length} מילים) 📚</h2>
+                            <p className="text-center text-sm font-bold text-cyan-600 mb-6">🃏 {matchMastered.length} מילים זכרת נכון במשחק הזוגות</p>
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 max-h-[60vh] overflow-y-auto pr-2">
                                 {pool.map((w, idx) => (
                                     <div key={idx} onClick={() => { setActiveWordIndex(idx); setStep(1); setView('learn'); }}
-                                        className={`p-4 rounded-xl border-2 cursor-pointer transition-all hover:scale-105
+                                        className={`p-4 rounded-xl border-2 cursor-pointer transition-all hover:scale-105 relative
                                             ${masteredIndexes.includes(wordKey(w)) ? 'bg-emerald-50 border-emerald-300' : 'bg-teal-50 border-teal-100 hover:border-teal-400'}`}>
+                                        {matchMastered.includes(wordKey(w)) && <span className="absolute top-1 left-1 text-sm" title="הצלחת לזכור במשחק הזוגות">🃏</span>}
                                         <p className="font-black text-lg text-center text-slate-800" dir="ltr">{w.en}</p>
                                         <p className="text-sm text-center text-slate-500 mt-1">{w.he}</p>
                                         {masteredIndexes.includes(wordKey(w)) && <span className="text-emerald-500 text-center block mt-1 font-bold">✓</span>}
@@ -563,6 +594,7 @@ export default function App() {
                                 <button key={i} onClick={() => {
                                     if (opt.isCorrect) {
                                         playSound('success'); triggerAnimation('success-check');
+                                        markWordLearned(builderData[builderIndex].word);
                                         setTimeout(() => setBuilderIndex(prev => getNextRandom(prev, builderData.length)), 1500);
                                     } else playSound('error');
                                 }} className="p-6 bg-cyan-50 border-2 border-cyan-200 rounded-2xl font-bold text-xl text-cyan-900 hover:bg-cyan-500 hover:text-white transition-all shadow-sm">{opt.text}</button>
@@ -614,6 +646,7 @@ export default function App() {
                                 <button key={i} onClick={() => {
                                     if (opt === completionData[compIndex].correct) {
                                         playSound('success'); triggerAnimation('success-check');
+                                        markWordLearned(completionData[compIndex].correct);
                                         setTimeout(() => setCompIndex(prev => getNextRandom(prev, completionData.length)), 1500);
                                     } else playSound('error');
                                 }} className="p-6 bg-white border-2 border-cyan-200 rounded-2xl font-black text-xl text-cyan-800 hover:bg-cyan-500 hover:text-white transition-all shadow-sm" dir="ltr">{opt}</button>
@@ -874,6 +907,28 @@ export default function App() {
                                 {quizSet[quizIndex].data.sentence.split('_______')[0]}
                                 <span className="border-b-4 border-teal-500 px-4">?</span>
                                 {quizSet[quizIndex].data.sentence.split('_______')[1]}
+                            </div>
+                        )}
+                        {quizSet[quizIndex].type === 'builder' && (
+                            <div className="flex justify-center items-center text-2xl md:text-4xl font-black gap-2 mb-10 bg-cyan-50 p-6 rounded-3xl border-2 border-cyan-100 flex-wrap" dir="ltr">
+                                <span className="text-cyan-500">
+                                    {quizSet[quizIndex].data.type === 'prefix' ? quizSet[quizIndex].data.prefix :
+                                        quizSet[quizIndex].data.type === 'suffix' ? quizSet[quizIndex].data.root :
+                                            quizSet[quizIndex].data.part1}
+                                </span>
+                                <span className="text-teal-300">+</span>
+                                <span className="text-slate-700">
+                                    {quizSet[quizIndex].data.type === 'prefix' ? quizSet[quizIndex].data.root :
+                                        quizSet[quizIndex].data.type === 'suffix' ? quizSet[quizIndex].data.suffix :
+                                            quizSet[quizIndex].data.part2}
+                                </span>
+                                <span className="text-teal-300 mx-2">=</span>
+                                <span className="text-cyan-800 underline decoration-cyan-300">{quizSet[quizIndex].data.word}</span>
+                            </div>
+                        )}
+                        {quizSet[quizIndex].type === 'half' && (
+                            <div className="mb-10 text-2xl font-bold bg-teal-50 p-6 rounded-2xl border-2 border-teal-200" dir="ltr">
+                                {quizSet[quizIndex].data.start} <span className="border-b-4 border-teal-500 px-4">...?</span>
                             </div>
                         )}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

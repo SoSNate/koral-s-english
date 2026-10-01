@@ -12,6 +12,16 @@ export const builderData = [
   { type: "suffix", root: "Reason", rootMeaning: "היגיון", suffix: "able", word: "Reasonable", options: ["לא הגיוני", "סביר / הגיוני", "יקר מאוד"], correct: 1, explanation: "הסיומת able פירושה 'ניתן ל...'. Reason+able = הגיוני, סביר." },
   { type: "compound", part1: "Peer", part1Meaning: "בן גיל", part2: "Pressure", part2Meaning: "לחץ", word: "Peer pressure", options: ["חבר קרוב", "לחץ חברתי מבני הגיל", "תחרות ספורט"], correct: 1, explanation: "לחץ (Pressure) שמפעילים בני הגיל (Peer) = לחץ חברתי." },
   { type: "prefix", prefix: "Ex", root: "Clude", rootMeaning: "לסגור", word: "Exclude", options: ["להוציא / לא לכלול", "לכלול בפנים", "לנעול דלת"], correct: 0, explanation: "Ex (החוצה) + Clude (לסגור) = להוציא מהקבוצה." },
+  { type: "prefix", prefix: "Mis", root: "Understand", rootMeaning: "להבין", word: "Misunderstand", options: ["להבין נכון", "להבין לא נכון", "להסביר היטב"], correct: 1, explanation: "הקידומת Mis פירושה 'לא נכון/בטעות'. Mis+Understand = להבין לא נכון." },
+  { type: "suffix", root: "Help", rootMeaning: "עזרה", suffix: "less", word: "Helpless", options: ["עוזר מאוד", "חסר אונים", "חזק מאוד"], correct: 1, explanation: "הסיומת less פירושה 'חסר'. Help+less = חסר עזרה = חסר אונים." },
+  { type: "suffix", root: "Tour", rootMeaning: "סיור", suffix: "ist", word: "Tourist", options: ["תייר", "מדריך טיולים", "נהג אוטובוס"], correct: 0, explanation: "הסיומת ist מתארת אדם שעושה פעולה. Tour+ist = מי שמטייל = תייר." },
+  { type: "compound", part1: "Sight", part1Meaning: "מראה", part2: "Seeing", part2Meaning: "ראייה", word: "Sightseeing", options: ["איסוף מזוודות", "סיור באתרים", "קניית מזכרות"], correct: 1, explanation: "Sight (מראה) + Seeing (ראייה) = לראות מראות = סיור באתרים." },
+  { type: "compound", part1: "Ice", part1Meaning: "קרח", part2: "Rink", part2Meaning: "זירה", word: "Ice rink", options: ["אצטדיון כדורגל", "פיסטת קרח להחלקה", "אולם הופעות"], correct: 1, explanation: "Ice (קרח) + Rink (זירה) = זירת קרח להחלקה." },
+  { type: "suffix", root: "Grace", rootMeaning: "חן", suffix: "ful", word: "Graceful", options: ["מגושם", "חינני", "עייף מאוד"], correct: 1, explanation: "הסיומת ful פירושה 'מלא ב'. Grace+ful = מלא חן = חינני." },
+  { type: "suffix", root: "Compete", rootMeaning: "להתחרות", suffix: "tion", word: "Competition", options: ["תחרות", "ניצחון קל", "אימון יחיד"], correct: 0, explanation: "Compete+tion הופך פועל לשם עצם: לפעולת ההתחרות = תחרות." },
+  { type: "prefix", prefix: "Dis", root: "Qualify", rootMeaning: "להכשיר", word: "Disqualify", options: ["להכשיר לתחרות", "לפסול מתחרות", "לנצח בתחרות"], correct: 1, explanation: "הקידומת Dis יוצרת הפך. Dis+Qualify = לפסול ספורטאי מתחרות." },
+  { type: "compound", part1: "Team", part1Meaning: "קבוצה", part2: "Mate", part2Meaning: "חבר", word: "Teammate", options: ["יריב", "שופט", "חבר לקבוצה"], correct: 2, explanation: "Team (קבוצה) + Mate (חבר) = חבר לקבוצה." },
+  { type: "compound", part1: "Land", part1Meaning: "ארץ / אדמה", part2: "Mark", part2Meaning: "סימן", word: "Landmark", options: ["אתר ציון דרך", "דרכון", "מזוודה"], correct: 0, explanation: "Land (ארץ) + Mark (סימן) = סימן בולט בארץ = אתר ציון דרך." },
 ];
 
 // ── אנלוגיות ────────────────────────────────────────────────────────
@@ -30,6 +40,16 @@ export const analogiesData = [
   { word1: "Since", word2: "Reason (סיבה)", word3: "Therefore", options: ["Result (תוצאה)", "Contrast (ניגוד)", "Example (דוגמה)", "Time (זמן)"], correct: "Result (תוצאה)" },
   { word1: "Apologize", word2: "Forgive", relation: "פעולה ותגובה", word3: "Ask", options: ["Answer", "Deny", "Avoid", "Judge"], correct: "Answer" },
   { word1: "Determined", word2: "Give up", relation: "הפכים בהתנהגות", word3: "Confident", options: ["Doubt yourself", "Trust yourself", "Complain", "Argue"], correct: "Doubt yourself" },
+  { word1: "Athlete", word2: "Stadium", relation: "מי פועל והיכן (מקום פעילות)", word3: "Tourist", options: ["Landmark", "Teammate", "Referee", "Costume"], correct: "Landmark" },
+  { word1: "Skater", word2: "Ice rink", relation: "מי פועל והיכן (מקום פעילות)", word3: "Dancer", options: ["Stage", "Luggage", "Passport", "Blade"], correct: "Stage" },
+  { word1: "Victory", word2: "Defeat", relation: "הפכים (Opposites)", word3: "Champion", options: ["Loser", "Teammate", "Referee", "Opponent"], correct: "Loser" },
+  { word1: "Choreography", word2: "Dance", relation: "תכנון ולאחר מכן ביצוע", word3: "Itinerary", options: ["Trip", "Costume", "Rhythm", "Audience"], correct: "Trip" },
+  { word1: "Rehearse", word2: "Perform", relation: "תרגול ולאחר מכן ביצוע", word3: "Train", options: ["Compete", "Travel", "Rest", "Complain"], correct: "Compete" },
+  { word1: "Souvenir", word2: "Memory", relation: "חפץ ומה שהוא מסמל", word3: "Trophy", options: ["Victory", "Luggage", "Passport", "Costume"], correct: "Victory" },
+  { word1: "Graceful", word2: "Clumsy", relation: "הפכים (Opposites)", word3: "Reliable", options: ["Irresponsible", "Honest", "Talented", "Confident"], correct: "Irresponsible" },
+  { word1: "Referee", word2: "Leads and explains the rules (מוביל ומסביר את החוקים)", word3: "Tour guide", options: ["Leads and explains the sights (מוביל ומסביר על האתרים)", "Competes for a prize (מתחרה על פרס)", "Buys souvenirs (קונה מזכרות)", "Trains every day (מתאמן כל יום)"], correct: "Leads and explains the sights (מוביל ומסביר על האתרים)" },
+  { word1: "Slip", word2: "Fall", relation: "סיבה ותוצאה", word3: "Practice", options: ["Improve", "Give up", "Complain", "Argue"], correct: "Improve" },
+  { word1: "Abroad", word2: "At home", relation: "הפכים (Opposites)", word3: "Local", options: ["Foreign", "Tourist", "Resident", "Guide"], correct: "Foreign" },
 ];
 
 // ── השלמת משפטים ────────────────────────────────────────────────────
@@ -49,6 +69,16 @@ export const completionData = [
   { sentence: "Instead of arguing about it, they decided to _______ a solution together.", options: ["Suggest", "Deny", "Avoid", "Complain"], correct: "Suggest" },
   { sentence: "She worked hard to _______ her fear of speaking in front of the whole class.", options: ["Overcome", "Notice", "Deserve", "Warn"], correct: "Overcome" },
   { sentence: "He felt left out because his friends decided to _______ him from the group chat.", options: ["Exclude", "Include", "Trust", "Respect"], correct: "Exclude" },
+  { sentence: "During the big game, my _______ passed me the ball at exactly the right moment.", options: ["Teammate", "Opponent", "Referee", "Tourist"], correct: "Teammate" },
+  { sentence: "The _______ blew the whistle and gave our team a penalty.", options: ["Referee", "Champion", "Souvenir", "Guide"], correct: "Referee" },
+  { sentence: "She trained for months and finally became the _______ of the whole competition.", options: ["Champion", "Opponent", "Tourist", "Partner"], correct: "Champion" },
+  { sentence: "The dancers had to _______ the routine many times before the real performance.", options: ["Rehearse", "Forgive", "Betray", "Complain"], correct: "Rehearse" },
+  { sentence: "Her movements on stage were so _______ that the whole audience was amazed.", options: ["Graceful", "Rude", "Lazy", "Selfish"], correct: "Graceful" },
+  { sentence: "Be careful, the ice is extremely _______ near the edge of the rink.", options: ["Slippery", "Reasonable", "Generous", "Confident"], correct: "Slippery" },
+  { sentence: "If you don't keep your _______, you might fall while skating.", options: ["Balance", "Luggage", "Costume", "Passport"], correct: "Balance" },
+  { sentence: "We packed all our _______ before heading to the airport for our trip abroad.", options: ["Luggage", "Souvenir", "Destination", "Helmet"], correct: "Luggage" },
+  { sentence: "The tour guide showed us every famous _______ in the old city.", options: ["Landmark", "Opponent", "Referee", "Teammate"], correct: "Landmark" },
+  { sentence: "Although she only had a short visit, she bought a small _______ to remember her trip.", options: ["Souvenir", "Trophy", "Helmet", "Blade"], correct: "Souvenir" },
 ];
 
 // ── משחק חצאי משפטים ────────────────────────────────────────────────
@@ -68,4 +98,12 @@ export const halfSentencesData = [
   { id: 13, start: "Despite feeling nervous and unprepared,", end: "she managed to convince the judges with her confidence." },
   { id: 14, start: "The new student felt excluded at first,", end: "until a kind classmate invited her to sit with them." },
   { id: 15, start: "Because he was aware of the peer pressure around him,", end: "he felt confident enough to simply say no." },
+  { id: 16, start: "Even though the ice was slippery,", end: "the skater kept her balance perfectly." },
+  { id: 17, start: "Because they rehearsed every single day,", end: "the dancers performed the routine flawlessly." },
+  { id: 18, start: "Although our team lost the first game,", end: "we didn't give up and trained even harder." },
+  { id: 19, start: "Before packing her luggage for the trip,", end: "she made sure she had her passport and tickets." },
+  { id: 20, start: "Since the referee gave an unfair decision,", end: "the players were extremely disappointed." },
+  { id: 21, start: "If you want to become a champion,", end: "you need patience, effort, and a lot of training." },
+  { id: 22, start: "While sightseeing in the old city,", end: "they discovered a beautiful hidden landmark." },
+  { id: 23, start: "Despite feeling nervous before the competition,", end: "the athlete stayed confident and scored the winning point." },
 ];

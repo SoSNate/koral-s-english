@@ -50,5 +50,22 @@ export const readingData = [
       { q: "What eventually happened to how other students treated Omer?", type: "text", correctAnswers: ["they included him", "they started including him", "included him too"] },
       { q: "What kind of decision does Tamar make, according to the last line?", type: "text", correctAnswers: ["a brave decision", "brave", "a small brave decision"] }
     ]
+  },
+  {
+    title: "The Ice Dance Team",
+    text: `Every Saturday morning, a group of girls met at the local [[ice rink|פיסטת קרח|אַייס רִינְק]] to practice their [[figure skating|החלקה אמנותית|פִיגְ'ר סְקֵייטִינְג]] routine together. Noa loved how the team combined dance and sport into one beautiful [[performance|הופעה|פֶּרְפוֹרְמֶנְס]].
+
+    Their coach created a new [[choreography|כוריאוגרפיה|קוֹרִיאוֹגְרָפִי]] every season, and the girls had to [[rehearse|לתרגל|רִיהֶרְס]] it again and again until every [[spin|סיבוב|סְפִּין]] matched the music perfectly. It wasn't always easy — the ice was often [[slippery|חלקלק|סְלִיפֶּרִי]], and keeping [[balance|שיווי משקל|בָּאלָאנְס]] while moving to the [[rhythm|קצב|רִידְם]] took a lot of [[patience|סבלנות|פֵיישֶׁנְס]].
+
+    One day, right before a big [[competition|תחרות|קוֹמְפֶּטִישֶׁן]], Noa slipped during practice and fell hard on the ice. [[However|אולם|הַאוּוֶר]], instead of giving up, she got back up immediately and kept [[training|אימון|טְרֵיינִינְג]] with her [[partner|בת זוג לריקוד|פַּארְטְנֶר]].
+
+    On the day of the show, the team skated onto the [[stage|במה|סְטֵייג']] made of ice, wearing matching [[costumes|תלבושות|קוֹסְטְיוּם]]. They [[glided|גלשו בעדינות|גְלַייד]] across the ice together, graceful and confident. When they finished, the crowd cheered loudly — and Noa [[realized|הבינה|רִיאָלַייז]] that falling down was never the end, as long as you got back up.`,
+    questions: [
+      { q: "Where did the girls meet every Saturday morning?", options: ["At the stadium", "At the ice rink", "At school", "At the tourist office"], correct: 1 },
+      { q: "What did the coach create every season?", options: ["A new costume", "A new choreography", "A new competition", "A new team"], correct: 1 },
+      { q: "What happened to Noa right before the big competition?", options: ["She quit the team", "She slipped and fell", "She lost her costume", "She forgot the routine"], correct: 1 },
+      { q: "What did Noa do right after falling?", type: "text", correctAnswers: ["she got back up", "got back up", "she kept training"] },
+      { q: "What did Noa realize by the end of the story?", type: "text", correctAnswers: ["falling down was never the end", "falling isn't the end", "you should get back up"] }
+    ]
   }
 ];
