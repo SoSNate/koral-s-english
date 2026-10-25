@@ -3,7 +3,7 @@ import { wordsData } from './data/words.js';
 import { builderData, analogiesData, completionData, halfSentencesData } from './data/exercises.js';
 import { storiesData } from './data/stories.js';
 import { readingData } from './data/reading.js';
-import { conversationsData } from './data/conversations.js';
+import { conversationTitle, conversationSubtitle, conversationSpeakers, conversationLines } from './data/conversations.js';
 
 // ── Helpers ───────────────────────────────────────────────────────
 const shuffle = arr => [...arr].sort(() => Math.random() - 0.5);
@@ -151,9 +151,8 @@ export default function App() {
     const [readingIndex, setReadingIndex] = useState(0);
     const [readingAnswers, setReadingAnswers] = useState({});
     const [readingTextInputs, setReadingTextInputs] = useState({});
-    const [convIndex, setConvIndex] = useState(0);
-    const [convStep, setConvStep] = useState(0);
-    const [convWrongFlash, setConvWrongFlash] = useState(false);
+    const [convRole, setConvRole] = useState('all');
+    const [convRevealed, setConvRevealed] = useState({});
 
     const isProcessingRef = useRef(false);
 
@@ -407,28 +406,8 @@ export default function App() {
         setReadingIndex(idx); setReadingAnswers({}); setReadingTextInputs({}); setView('reading-detail');
     };
 
-    const openConversation = idx => {
-        setConvIndex(idx); setConvStep(0); setConvWrongFlash(false); setView('conversation-detail');
-    };
-
-    const handleConvAnswer = opt => {
-        if (opt.correct) {
-            playSound('success');
-            setConvStep(prev => prev + 1);
-        } else {
-            playSound('error');
-            setConvWrongFlash(true);
-            setTimeout(() => setConvWrongFlash(false), 500);
-        }
-    };
-
-    useEffect(() => {
-        if (view !== 'conversation-detail') return;
-        const turns = conversationsData[convIndex].turns;
-        const turn = turns[convStep];
-        if (turn && turn.speaker === 'other') speakText(turn.en);
-        if (!turn) triggerAnimation('confetti');
-    }, [view, convIndex, convStep]);
+    const chooseConvRole = role => { setConvRole(role); setConvRevealed({}); };
+    const toggleConvLine = i => setConvRevealed(prev => ({ ...prev, [i]: !prev[i] }));
 
     const NavBtn = ({ icon, label, id, action }) => (
         <button onClick={() => { if (action) action(); else setView(id); }}
@@ -782,80 +761,45 @@ export default function App() {
                     </div>
                 )}
 
-                {/* Conversation List */}
+                {/* Conversation */}
                 {view === 'conversation' && (
-                    <div className="bg-white rounded-[3rem] p-8 shadow-xl border-t-8 border-teal-400 transition-all">
-                        <h2 className="text-3xl font-black text-teal-700 mb-2 text-center">תרגול ניהול שיחה 💬</h2>
-                        <p className="text-slate-500 font-bold mb-6 text-center">בחרי שיחה, האזיני למה שאומרים לך ובחרי את התגובה הכי מתאימה</p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {conversationsData.map((c, idx) => (
-                                <button key={idx} onClick={() => openConversation(idx)}
-                                    className="p-6 bg-teal-50 border-2 border-teal-200 rounded-2xl font-bold text-xl text-teal-900 hover:bg-teal-500 hover:text-white transition-all shadow-sm text-center">
-                                    {c.title}
+                    <div className="bg-white rounded-[3rem] p-6 md:p-10 shadow-xl border-t-8 border-teal-400 transition-all">
+                        <h2 className="text-3xl font-black text-teal-700 mb-1 text-center">{conversationTitle} 💬</h2>
+                        <p className="text-slate-500 font-bold mb-5 text-center">{conversationSubtitle}</p>
+                        <div className="flex justify-center gap-2 flex-wrap mb-2 sticky top-2 z-10">
+                            {[['all', 'הכל'], ['A', conversationSpeakers.A.label], ['B', conversationSpeakers.B.label]].map(([id, label]) => (
+                                <button key={id} onClick={() => chooseConvRole(id)}
+                                    className={`px-4 py-2 rounded-xl font-bold text-sm border-2 transition-all shadow-sm ${convRole === id ? 'bg-teal-500 text-white border-teal-600' : 'bg-white text-teal-700 border-teal-200 hover:bg-teal-50'}`}>
+                                    {label}
                                 </button>
                             ))}
                         </div>
+                        <p className="text-center text-xs text-slate-400 font-bold mb-6">
+                            {convRole === 'all' ? 'בחרי תפקיד כדי לתרגל: השורות של הדובר השני יתעמעמו' : 'השורות המעומעמות שייכות לדובר השני. לחצי עליהן כדי לראות'}
+                        </p>
+
+                        <div className="space-y-3">
+                            {conversationLines.map((line, i) => {
+                                const dimmed = convRole !== 'all' && line.speaker !== convRole && !convRevealed[i];
+                                const mine = line.speaker === 'A';
+                                return (
+                                    <div key={i} onClick={() => convRole !== 'all' && line.speaker !== convRole && toggleConvLine(i)}
+                                        className={`flex ${mine ? 'justify-start' : 'justify-end'} transition-opacity ${dimmed ? 'opacity-25 cursor-pointer' : 'opacity-100'}`}>
+                                        <div className={`w-full max-w-[90%] p-4 rounded-2xl shadow-sm border-2 ${mine ? 'bg-cyan-50 border-cyan-200 text-cyan-900' : 'bg-teal-50 border-teal-200 text-teal-900'}`}>
+                                            <div className="flex items-center justify-between mb-1">
+                                                <span className="text-xs font-black opacity-60">{i + 1}. {conversationSpeakers[line.speaker].name}</span>
+                                                <button onClick={e => { e.stopPropagation(); speakText(line.en); }}
+                                                    className="text-lg hover:scale-110 transition-transform" aria-label="השמעה">🔊</button>
+                                            </div>
+                                            <p dir="ltr" className="font-bold text-lg leading-snug text-left">{line.en}</p>
+                                            <p dir="rtl" className="text-sm opacity-70 mt-2 pt-2 border-t border-black/10">{line.he}</p>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </div>
                 )}
-
-                {/* Conversation Detail */}
-                {view === 'conversation-detail' && (() => {
-                    const turns = conversationsData[convIndex].turns;
-                    const turn = turns[convStep];
-                    const history = turns.slice(0, convStep);
-                    return (
-                        <div className="bg-white rounded-[3rem] p-8 md:p-12 shadow-xl border-t-8 border-teal-400 transition-all">
-                            <button onClick={() => setView('conversation')} className="text-teal-600 font-bold mb-4">→ חזרה לרשימה</button>
-                            <h2 className="text-3xl font-black text-teal-700 mb-6 text-center">{conversationsData[convIndex].title}</h2>
-
-                            <div className="space-y-4 mb-8 max-h-[45vh] overflow-y-auto pr-1">
-                                {history.map((t, i) => (
-                                    <div key={i} className={`flex ${t.speaker === 'other' ? 'justify-start' : 'justify-end'}`}>
-                                        <div className={`max-w-[80%] p-4 rounded-2xl font-bold shadow-sm ${t.speaker === 'other' ? 'bg-cyan-50 border-2 border-cyan-200 text-cyan-900' : 'bg-teal-500 text-white'}`}>
-                                            <p dir="ltr">{t.speaker === 'other' ? t.en : t.options.find(o => o.correct).en}</p>
-                                            <p className="text-xs opacity-70 mt-1" dir="rtl">{t.he}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-
-                            {!turn ? (
-                                <div className="text-center py-10">
-                                    <h3 className="text-4xl font-black text-emerald-500 mb-6">כל הכבוד! סיימת את השיחה! 🎉</h3>
-                                    <div className="flex justify-center gap-4 flex-wrap">
-                                        <button onClick={() => openConversation(convIndex)} className="px-8 py-4 bg-white border-2 border-teal-400 text-teal-600 rounded-xl font-bold hover:bg-teal-50">שחקי שוב</button>
-                                        <button onClick={() => openConversation(getNextRandom(convIndex, conversationsData.length))} className="px-8 py-4 bg-teal-500 text-white rounded-xl font-bold hover:bg-teal-600">שיחה הבאה</button>
-                                    </div>
-                                </div>
-                            ) : turn.speaker === 'other' ? (
-                                <div>
-                                    <div className="flex justify-start mb-6">
-                                        <div className="max-w-[80%] p-4 rounded-2xl font-bold shadow-sm bg-cyan-50 border-2 border-cyan-200 text-cyan-900">
-                                            <p dir="ltr">{turn.en}</p>
-                                            <p className="text-xs opacity-70 mt-1" dir="rtl">{turn.he}</p>
-                                        </div>
-                                    </div>
-                                    <button onClick={() => setConvStep(prev => prev + 1)}
-                                        className="block mx-auto px-10 py-4 bg-teal-500 text-white font-black text-lg rounded-2xl shadow-xl hover:bg-teal-600 transition-all">
-                                        המשך בשיחה →
-                                    </button>
-                                </div>
-                            ) : (
-                                <div>
-                                    <p className="text-center text-slate-500 font-bold mb-4">מה תעני? ({turn.he})</p>
-                                    <div className={`grid grid-cols-1 gap-3 ${convWrongFlash ? 'animate-pulse' : ''}`}>
-                                        {turn.options.map((opt, i) => (
-                                            <button key={i} onClick={() => handleConvAnswer(opt)}
-                                                className="p-4 bg-teal-50 border-2 border-teal-200 rounded-2xl font-bold text-lg text-teal-900 hover:bg-teal-500 hover:text-white transition-all shadow-sm text-right" dir="ltr">
-                                                {opt.en}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    );
-                })()}
 
                 {/* Match */}
                 {view === 'match' && (
