@@ -4,6 +4,7 @@ import { builderData, analogiesData, completionData, halfSentencesData } from '.
 import { storiesData } from './data/stories.js';
 import { readingData } from './data/reading.js';
 import { conversationTitle, conversationSubtitle, conversationSpeakers, conversationLines } from './data/conversations.js';
+import { examWords, examCompletionData } from './data/examPrep.js';
 
 // ── Helpers ───────────────────────────────────────────────────────
 const shuffle = arr => [...arr].sort(() => Math.random() - 0.5);
@@ -153,6 +154,17 @@ export default function App() {
     const [readingTextInputs, setReadingTextInputs] = useState({});
     const [convRole, setConvRole] = useState('all');
     const [convRevealed, setConvRevealed] = useState({});
+
+    // Exam prep states
+    const [examTab, setExamTab] = useState('completion'); // 'completion' | 'match' | 'flashcards'
+    const [examCompIndex, setExamCompIndex] = useState(0);
+    const [examCompOptions, setExamCompOptions] = useState(() => shuffle(examCompletionData[0].options));
+    const [examMatchCards, setExamMatchCards] = useState([]);
+    const [examFlippedCards, setExamFlippedCards] = useState([]);
+    const [examMatchedPairs, setExamMatchedPairs] = useState([]);
+    const [examFlashIndex, setExamFlashIndex] = useState(0);
+    const [examFlashFlipped, setExamFlashFlipped] = useState(false);
+    const [examFlashSeen, setExamFlashSeen] = useState([]);
 
     const isProcessingRef = useRef(false);
 
@@ -409,10 +421,54 @@ export default function App() {
     const chooseConvRole = role => { setConvRole(role); setConvRevealed({}); };
     const toggleConvLine = i => setConvRevealed(prev => ({ ...prev, [i]: !prev[i] }));
 
+    // ── Exam prep helpers ─────────────────────────────────────────────
+    const startExamMatch = () => {
+        const selected = shuffle(examWords).slice(0, 8);
+        let cards = [];
+        selected.forEach((w, i) => {
+            cards.push({ id: `en-${i}`, text: w.en, type: 'en', pairId: i });
+            cards.push({ id: `he-${i}`, text: w.he, type: 'he', pairId: i });
+        });
+        setExamMatchCards(shuffle(cards));
+        setExamFlippedCards([]);
+        setExamMatchedPairs([]);
+    };
+
+    const handleExamCardClick = card => {
+        if (examFlippedCards.length === 2 || examFlippedCards.some(c => c.id === card.id) || examMatchedPairs.includes(card.pairId)) return;
+        const newFlipped = [...examFlippedCards, card];
+        setExamFlippedCards(newFlipped);
+        if (newFlipped.length === 2) {
+            if (newFlipped[0].pairId === newFlipped[1].pairId) {
+                playSound('success');
+                setTimeout(() => {
+                    const newMatched = [...examMatchedPairs, newFlipped[0].pairId];
+                    setExamMatchedPairs(newMatched);
+                    setExamFlippedCards([]);
+                    if (newMatched.length === 8) triggerAnimation('confetti');
+                }, 500);
+            } else {
+                playSound('error');
+                setTimeout(() => setExamFlippedCards([]), 1000);
+            }
+        }
+    };
+
+    const goToExam = () => {
+        setView('exam');
+        setExamTab('completion');
+        setExamCompIndex(0);
+        setExamCompOptions(shuffle(examCompletionData[0].options));
+        setExamFlashIndex(0);
+        setExamFlashFlipped(false);
+        setExamFlashSeen([]);
+        startExamMatch();
+    };
+
     const NavBtn = ({ icon, label, id, action }) => (
         <button onClick={() => { if (action) action(); else setView(id); }}
             className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm border border-transparent
-                ${view === id || (view.startsWith('quiz') && id === 'quiz') || (view.startsWith('reading') && id === 'reading') || (view.startsWith('conversation') && id === 'conversation') ? 'bg-teal-500 text-white shadow-md scale-105 border-teal-600' : 'bg-white text-slate-700 hover:bg-teal-50 hover:text-teal-600 hover:border-teal-200'}`}>
+                ${view === id || (view.startsWith('quiz') && id === 'quiz') || (view.startsWith('reading') && id === 'reading') || (view.startsWith('conversation') && id === 'conversation') || (view === 'exam' && id === 'exam') ? 'bg-teal-500 text-white shadow-md scale-105 border-teal-600' : 'bg-white text-slate-700 hover:bg-teal-50 hover:text-teal-600 hover:border-teal-200'}`}>
             <span className="text-sm sm:text-base">{icon}</span><span className="hidden sm:inline">{label}</span>
         </button>
     );
@@ -461,6 +517,7 @@ export default function App() {
                         <NavBtn icon="💬" label="שיחה" id="conversation" action={() => setView('conversation')} />
                         <NavBtn icon="🃏" label="זוגות" id="match" action={startMatchGame} />
                         <NavBtn icon="🏆" label="בוחן" id="quiz" action={startQuiz} />
+                        <NavBtn icon="📝" label="הכנה למבחן" id="exam" action={goToExam} />
                     </div>
                 </header>
 
@@ -885,6 +942,154 @@ export default function App() {
                         </div>
                     </div>
                 )}
+
+                {/* Exam Prep */}
+                {view === 'exam' && (() => {
+                    const TabBtn = ({ id, label, icon }) => (
+                        <button onClick={() => setExamTab(id)}
+                            className={`flex-1 py-3 font-black text-sm rounded-xl transition-all ${examTab === id ? 'bg-violet-500 text-white shadow-md' : 'bg-violet-50 text-violet-700 hover:bg-violet-100'}`}>
+                            {icon} {label}
+                        </button>
+                    );
+
+                    return (
+                        <div className="bg-white rounded-[3rem] p-6 md:p-10 shadow-xl border-t-8 border-violet-400 transition-all">
+                            <h2 className="text-3xl font-black text-violet-700 mb-2 text-center">הכנה למבחן 📝</h2>
+                            <p className="text-center text-sm font-bold text-violet-400 mb-6">מילות עמוד 17 ו-20</p>
+
+                            {/* Tabs */}
+                            <div className="flex gap-2 mb-8">
+                                <TabBtn id="completion" label="השלמת משפטים" icon="✍️" />
+                                <TabBtn id="match" label="מציאת זוגות" icon="🔗" />
+                                <TabBtn id="flashcards" label="כרטסיות" icon="🃏" />
+                            </div>
+
+                            {/* ── TAB: השלמת משפטים ── */}
+                            {examTab === 'completion' && (() => {
+                                const item = examCompletionData[examCompIndex];
+                                const isLast = examCompIndex === examCompletionData.length - 1;
+                                return (
+                                    <div className="text-center">
+                                        <p className="text-xs font-bold text-violet-400 mb-4">שאלה {examCompIndex + 1} מתוך {examCompletionData.length}</p>
+                                        <div className="bg-violet-50 p-6 rounded-2xl border-2 border-violet-200 mb-8 text-xl md:text-2xl font-bold text-slate-800 leading-loose shadow-inner" dir="ltr">
+                                            {item.sentence.split('_______')[0]}
+                                            <span className="inline-block border-b-4 border-violet-500 text-violet-600 px-4">?</span>
+                                            {item.sentence.split('_______')[1]}
+                                        </div>
+                                        <p className="text-sm text-slate-400 mb-4" dir="rtl">{item.he}</p>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            {examCompOptions.map((opt, i) => (
+                                                <button key={i} onClick={() => {
+                                                    if (opt === item.correct) {
+                                                        playSound('success'); triggerAnimation('success-check');
+                                                        setTimeout(() => {
+                                                            if (!isLast) {
+                                                                const next = examCompIndex + 1;
+                                                                setExamCompIndex(next);
+                                                                setExamCompOptions(shuffle(examCompletionData[next].options));
+                                                            } else {
+                                                                triggerAnimation('confetti');
+                                                            }
+                                                        }, 1400);
+                                                    } else playSound('error');
+                                                }} className="p-5 bg-white border-2 border-violet-200 rounded-2xl font-black text-lg text-violet-900 hover:bg-violet-500 hover:text-white transition-all shadow-sm" dir="ltr">{opt}</button>
+                                            ))}
+                                        </div>
+                                        {isLast && (
+                                            <button onClick={() => { setExamCompIndex(0); setExamCompOptions(shuffle(examCompletionData[0].options)); }}
+                                                className="mt-8 px-8 py-3 bg-violet-100 text-violet-700 rounded-xl font-bold hover:bg-violet-200">
+                                                מחדש 🔄
+                                            </button>
+                                        )}
+                                    </div>
+                                );
+                            })()}
+
+                            {/* ── TAB: מציאת זוגות ── */}
+                            {examTab === 'match' && (
+                                <div className="text-center">
+                                    {examMatchedPairs.length === 8 ? (
+                                        <div className="py-12">
+                                            <h3 className="text-4xl font-black text-emerald-500 mb-6">כל הכבוד! 🎉</h3>
+                                            <button onClick={startExamMatch} className="px-8 py-4 bg-violet-500 text-white rounded-xl font-bold hover:bg-violet-600">שחקי שוב</button>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <p className="text-sm font-bold text-violet-400 mb-6">לחצי על מילה באנגלית ואז על תרגומה בעברית</p>
+                                            <div className="grid grid-cols-4 gap-3">
+                                                {examMatchCards.map((card, i) => {
+                                                    const isFlipped = examFlippedCards.some(c => c.id === card.id);
+                                                    const isMatched = examMatchedPairs.includes(card.pairId);
+                                                    return (
+                                                        <button key={i} onClick={() => handleExamCardClick(card)} disabled={isFlipped || isMatched}
+                                                            className={`h-20 rounded-2xl font-black text-sm transition-all shadow-md flex items-center justify-center border-4 px-2 text-center
+                                                                ${isMatched ? 'opacity-0 scale-95 cursor-default' :
+                                                                    isFlipped ? 'bg-violet-200 border-violet-400 text-violet-900 scale-105' :
+                                                                        'bg-violet-50 border-violet-200 text-violet-900 hover:bg-violet-100'}`}
+                                                            dir={card.type === 'en' ? 'ltr' : 'rtl'}>
+                                                            {card.text}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                            <button onClick={startExamMatch} className="mt-6 px-6 py-2 bg-violet-50 text-violet-600 rounded-xl font-bold text-sm hover:bg-violet-100">ערבב מחדש 🔀</button>
+                                        </>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* ── TAB: כרטסיות זיכרון ── */}
+                            {examTab === 'flashcards' && (() => {
+                                const card = examWords[examFlashIndex];
+                                const progress = Math.round((examFlashSeen.length / examWords.length) * 100);
+                                return (
+                                    <div className="text-center">
+                                        <p className="text-xs font-bold text-violet-400 mb-2">{examFlashIndex + 1} / {examWords.length} • {examFlashSeen.length} כרטסיות נראו</p>
+                                        <div className="w-full bg-violet-100 h-2 rounded-full mb-6 overflow-hidden">
+                                            <div className="bg-violet-500 h-full transition-all duration-500" style={{ width: `${progress}%` }} />
+                                        </div>
+
+                                        {/* הכרטסייה עצמה */}
+                                        <div onClick={() => setExamFlashFlipped(f => !f)}
+                                            className="cursor-pointer select-none bg-gradient-to-br from-violet-50 to-violet-100 border-4 border-violet-300 rounded-3xl p-10 mb-6 min-h-[200px] flex flex-col items-center justify-center shadow-lg hover:shadow-xl transition-all active:scale-95">
+                                            {!examFlashFlipped ? (
+                                                <>
+                                                    <p className="text-4xl font-black text-violet-900 mb-3" dir="ltr">{card.en}</p>
+                                                    <p className="text-sm text-violet-400 font-bold">לחצי לגלות תרגום 👆</p>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <p className="text-3xl font-black text-violet-700 mb-2" dir="rtl">{card.he}</p>
+                                                    <p className="text-lg text-slate-400 font-bold mt-2" dir="ltr">{card.en}</p>
+                                                </>
+                                            )}
+                                        </div>
+
+                                        <div className="flex justify-center gap-4">
+                                            <button onClick={() => {
+                                                setExamFlashSeen(prev => prev.includes(examFlashIndex) ? prev : [...prev, examFlashIndex]);
+                                                setExamFlashFlipped(false);
+                                                setExamFlashIndex(prev => (prev + 1) % examWords.length);
+                                            }} className="px-8 py-3 bg-violet-500 text-white rounded-xl font-bold hover:bg-violet-600 transition-all">
+                                                הבאה ➡️
+                                            </button>
+                                            <button onClick={() => {
+                                                setExamFlashFlipped(false);
+                                                setExamFlashIndex(prev => (prev - 1 + examWords.length) % examWords.length);
+                                            }} className="px-8 py-3 bg-violet-100 text-violet-700 rounded-xl font-bold hover:bg-violet-200 transition-all">
+                                                ⬅️ הקודמת
+                                            </button>
+                                        </div>
+                                        <button onClick={() => { setExamFlashIndex(0); setExamFlashFlipped(false); setExamFlashSeen([]); }}
+                                            className="mt-4 px-6 py-2 text-sm bg-violet-50 text-violet-500 rounded-xl font-bold hover:bg-violet-100">
+                                            מחדש 🔄
+                                        </button>
+                                    </div>
+                                );
+                            })()}
+                        </div>
+                    );
+                })()}
 
                 {view === 'quiz-result' && (
                     <div className="bg-white rounded-[3rem] p-12 shadow-xl border-t-8 border-teal-500 text-center transition-all min-h-[400px] flex flex-col justify-center">
