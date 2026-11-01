@@ -1,58 +1,135 @@
-// ── בניית משפטים לדיבור — קורל ────────────────────────────────────────────
-// כל משפט: en (התשובה), he (רמז בעברית), cat (קטגוריה), extra (מילים מבלבלות)
-// המשחק מפרק את en למילים, מוסיף את extra ומערבב.
+// ── בונים ומדברים — שאלות פתוחות עם כמה תשובות נכונות ─────────────────────
+// לכל שאלה: q (שאלה באנגלית), he (תרגום), tag (סוג), answers (כל התשובות שמתקבלות)
+// מאגר המילים על המסך נבנה מכל המילים שבתשובות + extra (מילים מבלבלות).
+// המילים במאגר לא נעלמות — אפשר להשתמש בהן שוב ושוב.
 
-export const sentenceCategories = [
-  { id: 'all',     label: 'הכל',       icon: '🌈' },
-  { id: 'me',      label: 'על עצמי',   icon: '🙋‍♀️' },
-  { id: 'someone', label: 'על מישהו',  icon: '👫' },
-  { id: 'past',    label: 'עבר',       icon: '⏪' },
-  { id: 'present', label: 'הווה',      icon: '▶️' },
-  { id: 'future',  label: 'עתיד',      icon: '⏩' },
-  { id: 'show',    label: 'להציג',     icon: '👀' },
-];
-
-export const sentenceBuilderData = [
-  // ── על עצמי ──
-  { cat: 'me', en: "My name is Koral.", he: "קוראים לי קורל.", extra: ["are", "his"] },
-  { cat: 'me', en: "I like to collect stickers.", he: "אני אוהבת לאסוף מדבקות.", extra: ["likes", "collection"] },
-  { cat: 'me', en: "I am kind to my friends.", he: "אני אדיבה לחברים שלי.", extra: ["is", "loud"] },
-  { cat: 'me', en: "I take care of my little brother.", he: "אני מטפלת באחי הקטן.", extra: ["takes", "big"] },
-  { cat: 'me', en: "I really admire my mother.", he: "אני ממש מעריצה את אמא שלי.", extra: ["admires", "father"] },
-  { cat: 'me', en: "I love going on an adventure.", he: "אני אוהבת לצאת להרפתקה.", extra: ["loves", "business"] },
-
-  // ── על מישהו ──
-  { cat: 'someone', en: "She has a valuable collection of coins.", he: "יש לה אוסף יקר ערך של מטבעות.", extra: ["have", "he"] },
-  { cat: 'someone', en: "My father has a small business.", he: "לאבא שלי יש עסק קטן.", extra: ["have", "handbag"] },
-  { cat: 'someone', en: "He is quite loud in class.", he: "הוא די קולני בכיתה.", extra: ["are", "kind"] },
-  { cat: 'someone', en: "My friends help each other.", he: "החברים שלי עוזרים זה לזה.", extra: ["helps", "other's"] },
-  { cat: 'someone', en: "Her handbag is red and big.", he: "תיק היד שלה אדום וגדול.", extra: ["His", "are"] },
-
-  // ── עבר ──
-  { cat: 'past', en: "Yesterday I downloaded a new game.", he: "אתמול הורדתי משחק חדש.", extra: ["download", "tomorrow"] },
-  { cat: 'past', en: "We finally found the location.", he: "סוף סוף מצאנו את המיקום.", extra: ["find", "will"] },
-  { cat: 'past', en: "She was dressed for the party.", he: "היא הייתה לבושה למסיבה.", extra: ["were", "is"] },
-  { cat: 'past', en: "Last year we went on an adventure.", he: "בשנה שעברה יצאנו להרפתקה.", extra: ["go", "next"] },
-  { cat: 'past', en: "The rain caused a major problem.", he: "הגשם גרם לבעיה גדולה.", extra: ["cause", "will"] },
-
-  // ── הווה ──
-  { cat: 'present', en: "I am looking around the room right now.", he: "אני מסתכלת מסביב בחדר עכשיו.", extra: ["was", "yesterday"] },
-  { cat: 'present', en: "She clicks on the button.", he: "היא לוחצת על הכפתור.", extra: ["click", "clicked"] },
-  { cat: 'present', en: "We gather in the park every Friday.", he: "אנחנו מתאספים בפארק כל יום שישי.", extra: ["gathers", "yesterday"] },
-  { cat: 'present', en: "They communicate in English.", he: "הם מתקשרים באנגלית.", extra: ["communicates", "communication"] },
-  { cat: 'present', en: "My teacher treats everyone kindly.", he: "המורה שלי מתייחסת לכולם באדיבות.", extra: ["treat", "loud"] },
-
-  // ── עתיד ──
-  { cat: 'future', en: "Tomorrow I will get together with my friends.", he: "מחר אני אפגש עם החברים שלי.", extra: ["yesterday", "got"] },
-  { cat: 'future', en: "We will go to the annual party.", he: "אנחנו נלך למסיבה השנתית.", extra: ["went", "century"] },
-  { cat: 'future', en: "I will make sure the door is closed.", he: "אני אוודא שהדלת סגורה.", extra: ["made", "was"] },
-  { cat: 'future', en: "Possibly it will rain next week.", he: "אולי ירד גשם בשבוע הבא.", extra: ["last", "rained"] },
-  { cat: 'future', en: "Next year I will collect more stamps.", he: "בשנה הבאה אאסוף עוד בולים.", extra: ["collected", "last"] },
-
-  // ── להציג ──
-  { cat: 'show', en: "This is my favorite handbag.", he: "זה תיק היד האהוב עליי.", extra: ["These", "are"] },
-  { cat: 'show', en: "Look at my stamp collection.", he: "תסתכלו על אוסף הבולים שלי.", extra: ["collect", "your"] },
-  { cat: 'show', en: "These coins are from the last century.", he: "המטבעות האלה מהמאה הקודמת.", extra: ["This", "is"] },
-  { cat: 'show', en: "Here are the directions to my house.", he: "הנה הוראות ההגעה לבית שלי.", extra: ["is", "direct"] },
-  { cat: 'show', en: "This app is easy to download.", he: "את האפליקציה הזו קל להוריד.", extra: ["are", "click"] },
+export const speakQuestions = [
+  {
+    tag: '🙋‍♀️ על עצמי',
+    q: "Tell me about yourself.",
+    he: "ספרי לי על עצמך.",
+    answers: [
+      "My name is Koral",
+      "I am kind",
+      "I am kind to my friends",
+      "I like to collect stickers",
+      "I like to collect stamps",
+      "I have a big collection of stickers",
+      "I take care of my little brother",
+      "I love adventure",
+      "I admire my mother",
+    ],
+    extra: ["is", "are", "his", "loud"],
+  },
+  {
+    tag: '⏩ עתיד',
+    q: "What will you do this weekend?",
+    he: "מה תעשי בסוף השבוע הזה?",
+    answers: [
+      "I will get together with my friends",
+      "I will take care of my little brother",
+      "I will download a new game",
+      "I will go to the park",
+      "I will collect stamps",
+      "I will go on an adventure",
+      "Possibly I will go to the park",
+      "I will look around the city",
+    ],
+    extra: ["went", "yesterday", "goes"],
+  },
+  {
+    tag: '⏪ עבר',
+    q: "What did you do yesterday?",
+    he: "מה עשית אתמול?",
+    answers: [
+      "I downloaded a new game",
+      "I got together with my friends",
+      "I took care of my little brother",
+      "I went to the park",
+      "I collected stamps",
+      "I looked around the city",
+      "I clicked on a funny video",
+      "I went on an adventure",
+    ],
+    extra: ["will", "tomorrow", "go", "download"],
+  },
+  {
+    tag: '👫 על מישהו',
+    q: "Tell me about someone in your family.",
+    he: "ספרי לי על מישהו מהמשפחה שלך.",
+    answers: [
+      "My father has a small business",
+      "My mother has a red handbag",
+      "My brother is quite loud",
+      "My mother is very kind",
+      "My father is very kind",
+      "My brother has a valuable collection",
+      "I admire my mother",
+      "I admire my father",
+      "My mother takes care of me",
+      "My father takes care of me",
+    ],
+    extra: ["have", "are", "take"],
+  },
+  {
+    tag: '▶️ הווה',
+    q: "What are you doing right now?",
+    he: "מה את עושה עכשיו?",
+    answers: [
+      "I am learning English right now",
+      "I am looking around the room",
+      "I am looking around the room right now",
+      "I am clicking on the screen",
+      "I am learning English",
+      "Right now I am learning English",
+    ],
+    extra: ["was", "will", "yesterday"],
+  },
+  {
+    tag: '👀 להציג',
+    q: "Show me something special you have.",
+    he: "תראי לי משהו מיוחד שיש לך.",
+    answers: [
+      "This is my stamp collection",
+      "This is my favorite handbag",
+      "This is my sticker collection",
+      "These are my stickers",
+      "These are my stamps",
+      "This collection is very valuable",
+      "This handbag is from my mother",
+      "These stamps are very valuable",
+    ],
+    extra: ["is", "this", "loud"],
+  },
+  {
+    tag: '🫂 חברים',
+    q: "What do you and your friends do together?",
+    he: "מה את והחברים שלך עושים ביחד?",
+    answers: [
+      "We get together in the park",
+      "We help each other",
+      "We communicate every day",
+      "We talk to each other every day",
+      "We go on an adventure",
+      "We download new games",
+      "We get together every Friday",
+      "We take care of each other",
+    ],
+    extra: ["they", "gets", "helps"],
+  },
+  {
+    tag: '🌍 טיול',
+    q: "Tell me about a trip you want to take.",
+    he: "ספרי לי על טיול שאת רוצה לעשות.",
+    answers: [
+      "I want to go on an adventure",
+      "I want to look around the city",
+      "I want to locate a hidden beach",
+      "I need directions to the beach",
+      "I will make sure I have my handbag",
+      "I want to see a castle from the last century",
+      "I will finally go on an adventure",
+    ],
+    extra: ["went", "was", "location"],
+  },
 ];

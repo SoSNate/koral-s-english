@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { sentenceBuilderData, sentenceCategories } from '../data/sentenceBuilder.js';
+import { speakQuestions } from '../data/sentenceBuilder.js';
 
 const shuffleArr = arr => {
     const a = [...arr];
@@ -12,8 +12,13 @@ const shuffleArr = arr => {
 
 const tokenize = s => s.replace(/[.,!?]/g, '').split(/\s+/).filter(Boolean);
 const norm = s => s.toLowerCase().replace(/[^a-z0-9' ]/g, '').replace(/\s+/g, ' ').trim();
+const display = words => {
+    if (!words.length) return '';
+    const s = words.join(' ');
+    return s.charAt(0).toUpperCase() + s.slice(1) + '.';
+};
 
-// כמה מילים מהמשפט הנכון נשמעו (לפי סדר) — סלחני למבטא
+// כמה מהמילים במשפט נשמעו (לפי סדר) — סלחני למבטא
 const speechScore = (transcript, target) => {
     const t = norm(transcript).split(' ');
     const g = norm(target).split(' ');
@@ -25,180 +30,215 @@ const speechScore = (transcript, target) => {
     return hit / g.length;
 };
 
+const emptySlot = () => ({ words: [], status: 'build', heard: '' });
+// status: build | wrong | dup | ok | spoken
+
 export default function SentenceBuilder({ speakText, playSound, triggerAnimation }) {
-    const [cat, setCat] = useState('all');
-    const pool = useMemo(
-        () => shuffleArr(sentenceBuilderData.filter(s => cat === 'all' || s.cat === cat)),
-        [cat]
-    );
-    const [idx, setIdx] = useState(0);
-    const [tiles, setTiles] = useState([]);     // [{id, text}]
-    const [picked, setPicked] = useState([]);   // ids by order
-    const [status, setStatus] = useState('build'); // build | wrong | built | spoken
-    const [listening, setListening] = useState(false);
-    const [heard, setHeard] = useState('');
-    const [showHint, setShowHint] = useState(false);
-    const [score, setScore] = useState(0);
+    const [qIdx, setQIdx] = useState(0);
+    const [slots, setSlots] = useState([emptySlot(), emptySlot()]);
+    const [active, setActive] = useState(0);
+    const [listeningSlot, setListeningSlot] = useState(null);
+    const [hint, setHint] = useState('');
 
-    const item = pool[idx % pool.length];
+    const item = speakQuestions[qIdx];
 
-    useEffect(() => {
-        if (!item) return;
-        const words = [...tokenize(item.en), ...(item.extra || [])];
-        setTiles(shuffleArr(words.map((text, i) => ({ id: i, text }))));
-        setPicked([]); setStatus('build'); setHeard(''); setShowHint(false);
+    // מאגר המילים — כל מילה פעם אחת, אפשר להשתמש שוב ושוב
+    const bank = useMemo(() => {
+        // מילים שמופיעות באות גדולה באמצע משפט (I, Koral, English) נשארות כך
+        const proper = new Set(['I']);
+        item.answers.forEach(a => tokenize(a).forEach((w, i) => { if (i > 0 && /^[A-Z]/.test(w)) proper.add(w); }));
+        const set = new Map();
+        [...item.answers.flatMap(tokenize), ...(item.extra || [])].forEach(w => {
+            const key = proper.has(w) ? w : w.toLowerCase();
+            if (!set.has(key)) set.set(key, key);
+        });
+        return shuffleArr([...set.values()]);
     }, [item]);
 
-    useEffect(() => { setIdx(0); setScore(0); }, [cat]);
+    const validAnswers = useMemo(() => item.answers.map(norm), [item]);
+    const foundCount = slots.filter(s => s.status === 'ok' || s.status === 'spoken').length;
+    const spokenCount = slots.filter(s => s.status === 'spoken').length;
 
-    if (!item) return null;
+    useEffect(() => {
+        setSlots([emptySlot(), emptySlot()]); setActive(0); setHint('');
+    }, [qIdx]);
 
-    const targetTokens = tokenize(item.en);
-    const builtText = picked.map(id => tiles.find(t => t.id === id)?.text).join(' ');
-    const catInfo = sentenceCategories.find(c => c.id === item.cat);
+    const updateSlot = (i, fn) => setSlots(prev => prev.map((s, j) => (j === i ? fn(s) : s)));
+    const locked = s => s.status === 'ok' || s.status === 'spoken';
 
-    const pick = id => {
-        if (status === 'built' || status === 'spoken') return;
-        setPicked(p => [...p, id]);
-        if (status === 'wrong') setStatus('build');
+    const addWord = w => {
+        const s = slots[active];
+        if (!s || locked(s)) return;
+        updateSlot(active, s => ({ ...s, words: [...s.words, w], status: 'build' }));
     };
-    const unpick = id => {
-        if (status === 'built' || status === 'spoken') return;
-        setPicked(p => p.filter(x => x !== id));
-        if (status === 'wrong') setStatus('build');
+    const removeWord = (i, wi) => {
+        if (locked(slots[i])) return;
+        setActive(i);
+        updateSlot(i, s => ({ ...s, words: s.words.filter((_, k) => k !== wi), status: 'build' }));
     };
 
-    const check = () => {
-        if (norm(builtText) === norm(targetTokens.join(' '))) {
+    const check = i => {
+        const built = norm(slots[i].words.join(' '));
+        const dup = slots.some((s, j) => j !== i && locked(s) && norm(s.words.join(' ')) === built);
+        if (dup) { playSound('error'); updateSlot(i, s => ({ ...s, status: 'dup' })); return; }
+        if (validAnswers.includes(built)) {
             playSound('success'); triggerAnimation('success-check');
-            setStatus('built');
-            speakText(item.en);
+            updateSlot(i, s => ({ ...s, status: 'ok' }));
+            speakText(display(slots[i].words));
+            // מעבר אוטומטי לשורה הריקה הבאה
+            const nextEmpty = slots.findIndex((s, j) => j !== i && !locked(s));
+            if (nextEmpty !== -1) setActive(nextEmpty);
         } else {
-            playSound('error'); setStatus('wrong');
+            playSound('error'); updateSlot(i, s => ({ ...s, status: 'wrong' }));
         }
     };
 
-    const listen = () => {
-        if (listening) return;
+    const listen = i => {
+        if (listeningSlot !== null) return;
         const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!Rec) { alert('הדפדפן לא תומך בזיהוי קולי. נסי בכרום 🙂'); return; }
+        const target = slots[i].words.join(' ');
         const rec = new Rec();
         rec.lang = 'en-US'; rec.interimResults = false; rec.maxAlternatives = 3;
-        rec.onstart = () => { setListening(true); setHeard(''); };
-        rec.onend = () => setListening(false);
-        rec.onerror = () => { setListening(false); setHeard('__err'); };
+        rec.onstart = () => { setListeningSlot(i); updateSlot(i, s => ({ ...s, heard: '' })); };
+        rec.onend = () => setListeningSlot(null);
+        rec.onerror = () => { setListeningSlot(null); updateSlot(i, s => ({ ...s, heard: '__err' })); };
         rec.onresult = e => {
             const alts = Array.from(e.results[0]).map(a => a.transcript);
-            const best = alts.reduce((b, a) => speechScore(a, item.en) > speechScore(b, item.en) ? a : b, alts[0]);
-            setHeard(best);
-            if (speechScore(best, item.en) >= 0.75) {
+            const best = alts.reduce((b, a) => (speechScore(a, target) > speechScore(b, target) ? a : b), alts[0]);
+            if (speechScore(best, target) >= 0.75) {
                 playSound('success'); triggerAnimation('confetti');
-                setStatus('spoken'); setScore(s => s + 1);
-            } else playSound('error');
+                updateSlot(i, s => ({ ...s, status: 'spoken', heard: best }));
+            } else {
+                playSound('error');
+                updateSlot(i, s => ({ ...s, heard: best }));
+            }
         };
-        try { rec.start(); } catch (_) { setListening(false); }
+        try { rec.start(); } catch (_) { setListeningSlot(null); }
     };
 
-    const next = () => setIdx(i => i + 1);
+    const addSlot = () => { setSlots(prev => [...prev, emptySlot()]); setActive(slots.length); };
+
+    const showHint = () => {
+        const used = slots.filter(locked).map(s => norm(s.words.join(' ')));
+        const remaining = item.answers.filter(a => !used.includes(norm(a)));
+        if (!remaining.length) { setHint('מצאת את כל התשובות! 🏆'); return; }
+        const a = tokenize(remaining[Math.floor(Math.random() * remaining.length)]);
+        setHint(`${a.slice(0, 2).join(' ')} ...`);
+    };
 
     return (
         <div className="text-center">
-            {/* קטגוריות */}
-            <div className="flex flex-wrap justify-center gap-2 mb-6">
-                {sentenceCategories.map(c => (
-                    <button key={c.id} onClick={() => setCat(c.id)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-black transition-all ${cat === c.id ? 'bg-violet-500 text-white shadow' : 'bg-violet-50 text-violet-600 hover:bg-violet-100'}`}>
-                        {c.icon} {c.label}
+            {/* ניווט בין שאלות */}
+            <div className="flex justify-center gap-1.5 mb-5 flex-wrap">
+                {speakQuestions.map((q, i) => (
+                    <button key={i} onClick={() => setQIdx(i)}
+                        className={`w-8 h-8 rounded-full text-xs font-black transition-all ${i === qIdx ? 'bg-violet-500 text-white scale-110 shadow' : 'bg-violet-50 text-violet-500 hover:bg-violet-100'}`}>
+                        {i + 1}
                     </button>
                 ))}
             </div>
 
-            <div className="flex justify-between items-center text-xs font-bold text-violet-400 mb-3">
-                <span>{catInfo?.icon} {catInfo?.label}</span>
-                <span>⭐ {score} משפטים נאמרו</span>
+            {/* שאלת הפתיחה */}
+            <div className="bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white rounded-3xl p-5 mb-5 shadow-lg">
+                <p className="text-xs font-bold opacity-80 mb-1">{item.tag}</p>
+                <div className="flex items-center justify-center gap-3" dir="ltr">
+                    <p className="text-2xl md:text-3xl font-black">{item.q}</p>
+                    <button onClick={() => speakText(item.q)} className="text-2xl hover:scale-110 transition-transform" aria-label="שמיעת השאלה">🔊</button>
+                </div>
+                <p className="text-sm font-bold opacity-90 mt-1" dir="rtl">{item.he}</p>
             </div>
 
-            {/* המשימה */}
-            <p className="text-lg md:text-xl font-black text-slate-700 mb-1" dir="rtl">תרכיבי ותגידי באנגלית:</p>
-            <p className="text-xl md:text-2xl font-black text-violet-700 mb-5" dir="rtl">"{item.he}"</p>
+            <p className="text-sm font-bold text-slate-500 mb-4" dir="rtl">
+                יש כמה תשובות נכונות! תבני משפטים מהמילים ותגידי אותם בקול 🗣️
+                <span className="block text-violet-500 mt-1">✅ {foundCount} משפטים • 🎤 {spokenCount} נאמרו • {item.answers.length} אפשרויות</span>
+            </p>
 
-            {/* אזור המשפט שנבנה */}
-            <div dir="ltr"
-                className={`min-h-[88px] p-4 rounded-2xl border-4 border-dashed mb-5 flex flex-wrap gap-2 items-center justify-center transition-all
-                    ${status === 'wrong' ? 'border-rose-300 bg-rose-50' : status === 'built' || status === 'spoken' ? 'border-emerald-300 bg-emerald-50' : 'border-violet-200 bg-violet-50'}`}>
-                {picked.length === 0 && <span className="text-violet-300 font-bold text-sm" dir="rtl">לחצי על המילים למטה לפי הסדר 👇</span>}
-                {picked.map(id => {
-                    const t = tiles.find(x => x.id === id);
+            {/* שורות המשפטים */}
+            <div className="space-y-3 mb-5">
+                {slots.map((s, i) => {
+                    const isActive = i === active && !locked(s);
+                    const color =
+                        s.status === 'spoken' ? 'border-emerald-400 bg-emerald-50' :
+                        s.status === 'ok' ? 'border-emerald-300 bg-emerald-50/60' :
+                        s.status === 'wrong' || s.status === 'dup' ? 'border-rose-300 bg-rose-50' :
+                        isActive ? 'border-violet-400 bg-violet-50 ring-4 ring-violet-100' : 'border-violet-200 bg-white';
                     return (
-                        <button key={id} onClick={() => unpick(id)}
-                            className="px-3 py-2 bg-white border-2 border-violet-300 rounded-xl font-black text-lg text-violet-900 shadow-sm hover:bg-rose-50">
-                            {t?.text}
-                        </button>
+                        <div key={i} onClick={() => !locked(s) && setActive(i)}
+                            className={`rounded-2xl border-[3px] p-3 transition-all cursor-pointer ${color}`}>
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs font-black text-violet-400 shrink-0 w-6">{s.status === 'spoken' ? '⭐' : s.status === 'ok' ? '✅' : `${i + 1}.`}</span>
+                                <div dir="ltr" className="flex-1 flex flex-wrap gap-1.5 min-h-[44px] items-center">
+                                    {s.words.length === 0 && (
+                                        <span className="text-violet-300 font-bold text-sm w-full text-center" dir="rtl">
+                                            {isActive ? 'לחצי על מילים מלמטה 👇' : 'לחצי כאן כדי לבנות משפט'}
+                                        </span>
+                                    )}
+                                    {locked(s) ? (
+                                        <span className="text-xl font-black text-emerald-700">{display(s.words)}</span>
+                                    ) : s.words.map((w, wi) => (
+                                        <button key={wi} onClick={e => { e.stopPropagation(); removeWord(i, wi); }}
+                                            className="px-2.5 py-1.5 bg-white border-2 border-violet-300 rounded-lg font-black text-base text-violet-900 hover:bg-rose-50 hover:border-rose-300">
+                                            {wi === 0 ? w.charAt(0).toUpperCase() + w.slice(1) : w}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* פעולות לשורה */}
+                            {!locked(s) && s.words.length > 0 && (
+                                <div className="flex justify-center gap-2 mt-2">
+                                    <button onClick={e => { e.stopPropagation(); check(i); }}
+                                        className="px-5 py-1.5 bg-violet-500 text-white rounded-lg font-black text-sm hover:bg-violet-600">בדיקה ✔️</button>
+                                    <button onClick={e => { e.stopPropagation(); setActive(i); updateSlot(i, () => emptySlot()); }}
+                                        className="px-4 py-1.5 bg-violet-100 text-violet-700 rounded-lg font-bold text-sm hover:bg-violet-200">ניקוי 🧹</button>
+                                </div>
+                            )}
+                            {s.status === 'wrong' && <p className="text-rose-500 text-sm font-bold mt-2">המשפט הזה עוד לא נכון — לחצי על מילה כדי להוציא אותה ונסי שוב 💪</p>}
+                            {s.status === 'dup' && <p className="text-rose-500 text-sm font-bold mt-2">את המשפט הזה כבר בנית! נסי משפט אחר 🙂</p>}
+
+                            {locked(s) && (
+                                <div className="flex flex-wrap justify-center items-center gap-2 mt-2">
+                                    <button onClick={e => { e.stopPropagation(); speakText(display(s.words), 0.75); }}
+                                        className="px-4 py-1.5 bg-sky-100 text-sky-700 rounded-lg font-bold text-sm hover:bg-sky-200">שמיעה 🔊</button>
+                                    {s.status === 'ok' && (
+                                        <button onClick={e => { e.stopPropagation(); listen(i); }} disabled={listeningSlot !== null}
+                                            className={`px-5 py-1.5 rounded-lg font-black text-sm text-white ${listeningSlot === i ? 'bg-rose-500 animate-pulse' : 'bg-violet-500 hover:bg-violet-600'}`}>
+                                            {listeningSlot === i ? 'מקשיבה... 👂' : 'עכשיו תגידי בקול 🎤'}
+                                        </button>
+                                    )}
+                                    {s.status === 'spoken' && <span className="text-emerald-600 font-black text-sm">אמרת מושלם! 🎉</span>}
+                                </div>
+                            )}
+                            {s.status === 'ok' && s.heard && s.heard !== '__err' && (
+                                <p className="text-rose-500 text-sm font-bold mt-1">שמעתי: <span dir="ltr">"{s.heard}"</span> — נסי שוב</p>
+                            )}
+                            {s.heard === '__err' && <p className="text-rose-500 text-sm font-bold mt-1">לא שמעתי, נסי שוב 🎤</p>}
+                        </div>
                     );
                 })}
             </div>
 
-            {status === 'wrong' && <p className="text-rose-500 font-bold mb-4">כמעט! לחצי על מילה כדי להחזיר אותה ונסי שוב 💪</p>}
-
-            {/* מאגר המילים */}
-            {(status === 'build' || status === 'wrong') && (
-                <>
-                    <div dir="ltr" className="flex flex-wrap gap-2 justify-center mb-6">
-                        {tiles.map(t => {
-                            const used = picked.includes(t.id);
-                            return (
-                                <button key={t.id} onClick={() => !used && pick(t.id)} disabled={used}
-                                    className={`px-4 py-3 rounded-xl font-black text-lg border-2 transition-all shadow-sm
-                                        ${used ? 'opacity-20 border-slate-200 bg-slate-50' : 'bg-white border-violet-200 text-violet-900 hover:bg-violet-500 hover:text-white active:scale-95'}`}>
-                                    {t.text}
-                                </button>
-                            );
-                        })}
-                    </div>
-                    <div className="flex flex-wrap justify-center gap-3">
-                        <button onClick={check} disabled={picked.length === 0}
-                            className="px-8 py-3 bg-violet-500 text-white rounded-xl font-black hover:bg-violet-600 disabled:opacity-40">
-                            בדיקה ✔️
+            {/* מאגר המילים — תמיד מול העיניים */}
+            <div className="bg-violet-50/60 border-2 border-violet-100 rounded-3xl p-4 mb-4">
+                <p className="text-xs font-black text-violet-400 mb-3">מאגר מילים — אפשר להשתמש בכל מילה כמה פעמים</p>
+                <div dir="ltr" className="flex flex-wrap gap-2 justify-center">
+                    {bank.map(w => (
+                        <button key={w} onClick={() => addWord(w)}
+                            className="px-3.5 py-2.5 rounded-xl font-black text-base bg-white border-2 border-violet-200 text-violet-900 hover:bg-violet-500 hover:text-white hover:border-violet-500 active:scale-95 transition-all shadow-sm">
+                            {w}
                         </button>
-                        <button onClick={() => { setPicked([]); setStatus('build'); }}
-                            className="px-5 py-3 bg-violet-100 text-violet-700 rounded-xl font-bold hover:bg-violet-200">
-                            ניקוי 🧹
-                        </button>
-                        <button onClick={() => setShowHint(h => !h)}
-                            className="px-5 py-3 bg-amber-50 text-amber-700 rounded-xl font-bold hover:bg-amber-100">
-                            רמז 💡
-                        </button>
-                    </div>
-                    {showHint && <p className="mt-3 text-amber-700 font-bold" dir="ltr">{targetTokens[0]} ... ({targetTokens.length} words)</p>}
-                </>
-            )}
-
-            {/* שלב הדיבור */}
-            {(status === 'built' || status === 'spoken') && (
-                <div className="mt-2">
-                    <p className="text-2xl md:text-3xl font-black text-emerald-600 mb-4" dir="ltr">{item.en}</p>
-                    {status === 'built' && <p className="font-bold text-slate-600 mb-4">מעולה! עכשיו תגידי את המשפט בקול 🎤</p>}
-                    <div className="flex flex-wrap justify-center gap-3 mb-4">
-                        <button onClick={() => speakText(item.en, 0.75)}
-                            className="px-5 py-3 bg-sky-100 text-sky-700 rounded-xl font-bold hover:bg-sky-200">
-                            שמיעה 🔊
-                        </button>
-                        <button onClick={listen} disabled={listening}
-                            className={`px-8 py-3 rounded-xl font-black text-white transition-all ${listening ? 'bg-rose-500 animate-pulse' : 'bg-violet-500 hover:bg-violet-600'}`}>
-                            {listening ? 'מקשיבה... 👂' : 'להגיד בקול 🎤'}
-                        </button>
-                    </div>
-                    {heard && heard !== '__err' && status !== 'spoken' && (
-                        <p className="text-rose-500 font-bold mb-3">שמעתי: <span dir="ltr">"{heard}"</span> — נסי שוב 💪</p>
-                    )}
-                    {heard === '__err' && <p className="text-rose-500 font-bold mb-3">לא שמעתי, נסי שוב 🎤</p>}
-                    {status === 'spoken' && <p className="text-emerald-600 font-black text-xl mb-3">אלופה! אמרת את זה מושלם 🎉</p>}
-                    <button onClick={next}
-                        className={`px-8 py-3 rounded-xl font-black ${status === 'spoken' ? 'bg-emerald-500 text-white hover:bg-emerald-600' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
-                        {status === 'spoken' ? 'משפט הבא ➡️' : 'דלגי ⏭️'}
-                    </button>
+                    ))}
                 </div>
-            )}
+            </div>
+
+            <div className="flex flex-wrap justify-center gap-3">
+                <button onClick={addSlot} className="px-5 py-2.5 bg-violet-100 text-violet-700 rounded-xl font-bold hover:bg-violet-200">+ עוד משפט</button>
+                <button onClick={showHint} className="px-5 py-2.5 bg-amber-50 text-amber-700 rounded-xl font-bold hover:bg-amber-100">רמז 💡</button>
+                <button onClick={() => setQIdx(i => (i + 1) % speakQuestions.length)}
+                    className="px-6 py-2.5 bg-emerald-500 text-white rounded-xl font-black hover:bg-emerald-600">שאלה הבאה ➡️</button>
+            </div>
+            {hint && <p className="mt-3 text-amber-700 font-black text-lg" dir="ltr">{hint}</p>}
         </div>
     );
 }
