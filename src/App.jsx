@@ -5,6 +5,7 @@ import { storiesData } from './data/stories.js';
 import { readingData } from './data/reading.js';
 import { conversationTitle, conversationSubtitle, conversationSpeakers, conversationLines } from './data/conversations.js';
 import { examWords, examCompletionData } from './data/examPrep.js';
+import SentenceBuilder from './components/SentenceBuilder.jsx';
 
 // ── Helpers ───────────────────────────────────────────────────────
 const shuffle = arr => [...arr].sort(() => Math.random() - 0.5);
@@ -958,11 +959,16 @@ export default function App() {
                             <p className="text-center text-sm font-bold text-violet-400 mb-6">מילות עמוד 17 ו-20</p>
 
                             {/* Tabs */}
-                            <div className="flex gap-2 mb-8">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-8">
                                 <TabBtn id="completion" label="השלמת משפטים" icon="✍️" />
                                 <TabBtn id="match" label="מציאת זוגות" icon="🔗" />
                                 <TabBtn id="flashcards" label="כרטסיות" icon="🃏" />
+                                <TabBtn id="speak" label="בונים ומדברים" icon="🗣️" />
                             </div>
+
+                            {examTab === 'speak' && (
+                                <SentenceBuilder speakText={speakText} playSound={playSound} triggerAnimation={triggerAnimation} />
+                            )}
 
                             {/* ── TAB: השלמת משפטים ── */}
                             {examTab === 'completion' && (() => {
