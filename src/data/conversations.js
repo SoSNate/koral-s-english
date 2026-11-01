@@ -1,11 +1,11 @@
 // ── תרגול שיחה: תסריט שיעור מלא בין שני דוברים ─────────────────────
-// A = דני (המורה), B = שרה (התלמידה). קורל בוחרת תפקיד ומתרגלת את התור שלה.
+// A = דני, B = שרה — שני עובדים במפעל בהפסקת צהריים. קורל בוחרת תפקיד ומתרגלת את התור שלה.
 export const conversationTitle = "Factory Lunch Conversation";
 export const conversationSubtitle = "שיחה על אוכל בהפסקת צהריים במפעל";
 
 export const conversationSpeakers = {
-  A: { name: "Danny", label: "דני (מורה)" },
-  B: { name: "Sara", label: "שרה (תלמידה)" }
+  A: { name: "Danny", label: "דני (עובד במפעל)" },
+  B: { name: "Sara", label: "שרה (עובדת במפעל)" }
 };
 
 export const conversationLines = [
@@ -16,13 +16,13 @@ export const conversationLines = [
   },
   {
     speaker: "B",
-    en: "Me too! The machines were very noisy today. I was thinking about food for the last two hours.",
-    he: "גם אני! המכונות היו מאוד רועשות היום. חשבתי על אוכל במשך השעתיים האחרונות."
+    en: "Me too! The machines were very noisy today. I have been thinking about food for the last two hours.",
+    he: "גם אני! המכונות היו מאוד רועשות היום. אני חושבת על אוכל כבר שעתיים."
   },
   {
     speaker: "A",
-    en: "I understand you completely. What did you bring in your lunch box today? It smells really good.",
-    he: "אני מבין אותך לגמרי. מה הבאת בקופסת האוכל שלך היום? זה מריח ממש טוב."
+    en: "I know exactly what you mean. What did you bring in your lunch box today? It smells really good.",
+    he: "אני יודע בדיוק למה את מתכוונת. מה הבאת בקופסת האוכל שלך היום? זה מריח ממש טוב."
   },
   {
     speaker: "B",
@@ -41,28 +41,28 @@ export const conversationLines = [
   },
   {
     speaker: "A",
-    en: "Homemade food is the best. Tell me, how do you like your food seasoned? Do you like spicy food?",
-    he: "אוכל ביתי הוא הכי טוב. תגידי לי, איך את אוהבת את האוכל שלך מתובל? את אוהבת אוכל חריף?"
+    en: "Homemade food is the best. Tell me, do you like your food spicy?",
+    he: "אוכל ביתי הוא הכי טוב. תגידי לי, את אוהבת אוכל חריף?"
   },
   {
     speaker: "B",
-    en: "Not too spicy! A little bit of black pepper, garlic, and olive oil is enough for me. If it is too hot, I can't taste the food.",
-    he: "לא חריף מדי! קצת פלפל שחור, שום ושמן זית זה מספיק בשבילי. אם זה חריף מדי, אני לא יכולה להרגיש את הטעם של האוכל."
+    en: "Not too spicy! A little bit of black pepper, garlic, and olive oil is enough for me. When food is too hot, I can't taste anything.",
+    he: "לא חריף מדי! קצת פלפל שחור, שום ושמן זית זה מספיק בשבילי. כשהאוכל חריף מדי, אני לא מרגישה שום טעם."
   },
   {
     speaker: "A",
-    en: "Oh, I am the opposite! I put hot chili sauce on everything. What about meat? When you go to a restaurant, how do you like your steak?",
-    he: "וואו, אני ההפך! אני שם רוטב צ'ילי חריף על הכל. מה לגבי בשר? כשאת הולכת למסעדה, איך את אוהבת את הסטייק שלך?"
+    en: "Really? I am the opposite! I put hot chili sauce on everything. What about meat? When you go to a restaurant, how do you like your steak?",
+    he: "באמת? אני בדיוק ההפך! אני שם רוטב צ'ילי חריף על הכל. מה לגבי בשר? כשאת הולכת למסעדה, איך את אוהבת את הסטייק שלך?"
   },
   {
     speaker: "B",
     en: "I prefer my steak medium-well. I don't like seeing red inside the meat. And I love crispy french fries on the side!",
-    he: "אני מעדיפה את הסטייק שלי מדיום-וול (עשוי היטב). אני לא אוהבת לראות אדום בתוך הבשר. ואני אוהבת צ'יפס פריך בצד!"
+    he: "אני מעדיפה את הסטייק שלי מדיום-וול (כמעט עשוי היטב). אני לא אוהבת לראות אדום בתוך הבשר. ואני אוהבת צ'יפס פריך בצד!"
   },
   {
     speaker: "A",
-    en: "Crispy fries are a must! And how do you like your eggs in the morning?",
-    he: "צ'יפס פריך זה חובה! ואיך את אוהבת את הביצים שלך בבוקר?"
+    en: "Crispy fries are a must! You know, I skipped breakfast today, so now I am dreaming about eggs. How do you like your eggs in the morning?",
+    he: "צ'יפס פריך זה חובה! את יודעת, דילגתי היום על ארוחת בוקר, אז עכשיו אני חולם על ביצים. איך את אוהבת את הביצים שלך בבוקר?"
   },
   {
     speaker: "B",
@@ -101,8 +101,8 @@ export const conversationLines = [
   },
   {
     speaker: "A",
-    en: "Now you are making me even hungrier! Let's talk about travel. What is the best food you have ever eaten in another country?",
-    he: "עכשיו את עושה אותי אפילו יותר רעב! בואי נדבר על טיולים. מה האוכל הכי טוב שאי פעם אכלת במדינה אחרת?"
+    en: "Now you are making me even hungrier! Speaking of delicious food, what is the best food you have ever eaten on a trip abroad?",
+    he: "עכשיו את עושה אותי אפילו יותר רעב! אם כבר מדברים על אוכל טעים, מה האוכל הכי טוב שאי פעם אכלת בטיול בחו״ל?"
   },
   {
     speaker: "B",
@@ -126,8 +126,8 @@ export const conversationLines = [
   },
   {
     speaker: "B",
-    en: "I also love Asian food! Here at home, I really enjoy eating sushi with salmon and avocado, or hot noodle soup in the winter.",
-    he: "אני גם אוהבת אוכל אסייתי! כאן בבית, אני מאוד נהנית לאכול סושי עם סלמון ואבוקדו, או מרק אטריות חם בחורף."
+    en: "I also love Asian food! Here in Israel, I really enjoy eating sushi with salmon and avocado, or hot noodle soup in the winter.",
+    he: "גם אני אוהבת אוכל אסייתי! כאן בארץ, אני מאוד נהנית לאכול סושי עם סלמון ואבוקדו, או מרק אטריות חם בחורף."
   },
   {
     speaker: "A",
@@ -141,8 +141,8 @@ export const conversationLines = [
   },
   {
     speaker: "A",
-    en: "That happens to everyone! Practice makes perfect. Is there a restaurant near the factory that you can recommend?",
-    he: "זה קורה לכולם! אימון עושה מושלם. יש מסעדה ליד המפעל שאת יכולה להמליץ עליה?"
+    en: "That happens to everyone! Practice makes perfect. Speaking of restaurants, is there a good place near the factory that you can recommend?",
+    he: "זה קורה לכולם! אימון עושה מושלם. אם כבר מדברים על מסעדות, יש מקום טוב ליד המפעל שאת יכולה להמליץ עליו?"
   },
   {
     speaker: "B",
@@ -151,23 +151,23 @@ export const conversationLines = [
   },
   {
     speaker: "A",
-    en: "Good idea, I will book a table. By the way, speaking of food you don't like, is there any food that you really hate and will never put on your plate?",
-    he: "רעיון טוב, אני אזמין שולחן. אגב, אם כבר מדברים על אוכל שלא אוהבים, יש איזשהו אוכל שאת ממש שונאת ולעולם לא תשימי בצלחת שלך?"
+    en: "Good idea, I will book a table for Friday. But first tell me, is there any food that you really hate? I don't want to order something you will never put on your plate.",
+    he: "רעיון טוב, אני אזמין שולחן ליום שישי. אבל קודם תגידי לי, יש איזשהו אוכל שאת ממש שונאת? אני לא רוצה להזמין משהו שלעולם לא תשימי בצלחת שלך."
   },
   {
     speaker: "B",
-    en: "Yes! I really don't like seafood like shrimps or squid, and I also hate blue cheese because the smell is too strong for me.",
-    he: "כן! אני ממש לא אוהבת פירות ים כמו שרימפס או קלמארי, ואני גם שונאת גבינה כחולה כי הריח חזק מדי בשבילי."
+    en: "Good question! I really don't like seafood like shrimps or squid, and I also hate blue cheese because the smell is too strong for me.",
+    he: "שאלה טובה! אני ממש לא אוהבת פירות ים כמו שרימפס או קלמארי, ואני גם שונאת גבינה כחולה כי הריח חזק מדי בשבילי."
   },
   {
     speaker: "A",
-    en: "Blue cheese does smell like old socks! For me, it is cilantro and olives. I always ask the waiter to take them out.",
-    he: "גבינה כחולה באמת מריחה כמו גרביים ישנים! בשבילי, זה כוסברה וזיתים. אני תמיד מבקש מהמלצר להוציא אותם."
+    en: "You are right, blue cheese smells like old socks! For me, it is cilantro and olives. I always ask the waiter to take them out.",
+    he: "את צודקת, גבינה כחולה מריחה כמו גרביים ישנים! בשבילי, זה כוסברה וזיתים. אני תמיד מבקש מהמלצר להוציא אותם."
   },
   {
     speaker: "B",
-    en: "No olives?! You are missing out! Anyway, we have ten minutes left before we go back to work. Do you want some coffee and a cookie?",
-    he: "בלי זיתים?! אתה מפסיד! בכל מקרה, נשארו לנו עשר דקות לפני שאנחנו חוזרים לעבודה. אתה רוצה קצת קפה ועוגייה?"
+    en: "No olives?! You are missing out! Anyway, we have ten minutes left before we go back to work. I brought a thermos of coffee from home. Do you want some coffee and a cookie?",
+    he: "בלי זיתים?! אתה מפסיד! בכל מקרה, נשארו לנו עשר דקות לפני שאנחנו חוזרים לעבודה. הבאתי טרמוס קפה מהבית. אתה רוצה קצת קפה ועוגייה?"
   },
   {
     speaker: "A",
@@ -191,12 +191,12 @@ export const conversationLines = [
   },
   {
     speaker: "A",
-    en: "Maybe I should do the same. Thank you for the lunch, the talk, and the good advice, Sara. It was a really nice break.",
-    he: "אולי אני צריך לעשות אותו דבר. תודה על ארוחת הצהריים, על השיחה ועל העצות הטובות, שרה. הייתה הפסקה ממש נעימה."
+    en: "Maybe I should do the same. Thank you for the coffee, the cookie, and the good advice, Sara. It was a really nice break.",
+    he: "אולי אני צריך לעשות אותו דבר. תודה על הקפה, על העוגייה ועל העצות הטובות, שרה. הייתה הפסקה ממש נעימה."
   },
   {
     speaker: "B",
-    en: "You're welcome, Danny! Come on, let's go to the coffee machine before the shift starts!",
-    he: "בשמחה, דני! קדימה, בוא נלך למכונת הקפה לפני שהמשמרת מתחילה!"
+    en: "You're welcome, Danny! Come on, the break is over. Back to the assembly line! And don't forget to book the table for Friday.",
+    he: "בשמחה, דני! קדימה, ההפסקה נגמרה. חוזרים לפס הייצור! ואל תשכח להזמין שולחן ליום שישי."
   }
 ];
