@@ -6,6 +6,7 @@ import { readingData } from './data/reading.js';
 import { conversationTitle, conversationSubtitle, conversationSpeakers, conversationLines } from './data/conversations.js';
 import { examWords, examCompletionData } from './data/examPrep.js';
 import SentenceBuilder from './components/SentenceBuilder.jsx';
+import IrregularVerbs from './components/IrregularVerbs.jsx';
 
 // ── Helpers ───────────────────────────────────────────────────────
 const shuffle = arr => [...arr].sort(() => Math.random() - 0.5);
@@ -519,6 +520,7 @@ export default function App() {
                         <NavBtn icon="🃏" label="זוגות" id="match" action={startMatchGame} />
                         <NavBtn icon="🏆" label="בוחן" id="quiz" action={startQuiz} />
                         <NavBtn icon="📝" label="הכנה למבחן" id="exam" action={goToExam} />
+                        <NavBtn icon="🔤" label="פעלים" id="verbs" />
                     </div>
                 </header>
 
@@ -1096,6 +1098,10 @@ export default function App() {
                         </div>
                     );
                 })()}
+
+                {view === 'verbs' && (
+                    <IrregularVerbs speakText={speakText} playSound={playSound} triggerAnimation={triggerAnimation} />
+                )}
 
                 {view === 'quiz-result' && (
                     <div className="bg-white rounded-[3rem] p-12 shadow-xl border-t-8 border-teal-500 text-center transition-all min-h-[400px] flex flex-col justify-center">
